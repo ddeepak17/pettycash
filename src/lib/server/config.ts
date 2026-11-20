@@ -51,8 +51,9 @@ export const limits = () => ({
   houseRunBudgetBase: big("HOUSE_RUN_BUDGET_BASE", 30_000n),
   maxSteps: Number(env("MAX_STEPS") ?? 6),
   approvalWaitMs: Number(env("APPROVAL_WAIT_MS") ?? 60_000),
-  houseRunsPerHourPerIp: Number(env("HOUSE_RUNS_PER_HOUR_PER_IP") ?? 4),
-  houseRunsPerHour: Number(env("HOUSE_RUNS_PER_HOUR") ?? 40),
+  // Generous per address: at a conference many visitors share one network address. The real cap on cost is the onchain allowance.
+  houseRunsPerHourPerIp: Number(env("HOUSE_RUNS_PER_HOUR_PER_IP") ?? 40),
+  houseRunsPerHour: Number(env("HOUSE_RUNS_PER_HOUR") ?? 150),
 });
 
 /** The public demo petty cash: an allowance from a wallet we funded, so anyone can try without a wallet. */

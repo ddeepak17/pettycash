@@ -163,7 +163,7 @@ When the seller did not report a payment signature, `findPaymentProof` searches 
 | `GET /api/receipts?owner=&limit=` | Anyone | Receipts for a wallet |
 | `GET /api/feed` | Anyone | The 12 most recent house receipts |
 | `GET /api/artifact/:id` | Anyone with the purchase id | A delivered image, served with `nosniff` and a locked-down content security policy |
-| `POST /api/prove/overspend` | Anyone | The limit test for a petty cash of this agent. Simulated, or sent so the refusal is recorded onchain. Sent tests are limited to 6 per hour per IP address and 60 per hour in total |
+| `POST /api/prove/overspend` | Anyone for a simulation; the owner's session, or the public demo petty cash, to record it onchain | The limit test for a petty cash of this agent. Only a refusal raised by the Allowances program counts. Sent tests are limited to 6 per hour per address and 60 per hour in total |
 | `POST /api/rpc` | Anyone | Same-origin JSON-RPC proxy for the browser. A fixed list of methods, 240 requests per minute per IP address |
 | `POST /api/quicknode` | QuickNode | The Stream webhook. Rejects with 401 before touching the database unless the HMAC, timestamp and nonce are valid |
 | `GET /api/quicknode` | Anyone | Health: whether the webhook is configured, delivery count, last slot. No secrets |

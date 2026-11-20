@@ -159,7 +159,7 @@ Default limits (`src/lib/server/config.ts`):
 | Budget for one errand | $0.25 on your own petty cash, $0.03 on the house petty cash, never more than what is left | `RUN_BUDGET_BASE`, `HOUSE_RUN_BUDGET_BASE` |
 | Steps in one errand | 6 | `MAX_STEPS` |
 | Time to answer an approval | 60 seconds, then the answer is no | `APPROVAL_WAIT_MS` |
-| House demo rate | 4 errands per hour per IP address, 40 per hour in total | `HOUSE_RUNS_PER_HOUR_PER_IP`, `HOUSE_RUNS_PER_HOUR` |
+| House demo rate | 40 errands per hour per network address (visitors at a conference share one), 150 per hour in total. The real cap on cost is the onchain allowance | `HOUSE_RUNS_PER_HOUR_PER_IP`, `HOUSE_RUNS_PER_HOUR` |
 
 The full threat model is in [docs/TRUST.md](docs/TRUST.md).
 
