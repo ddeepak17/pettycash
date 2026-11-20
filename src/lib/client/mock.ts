@@ -117,7 +117,8 @@ export async function mockRun(req: RunRequest, house: boolean, onEvent: (e: RunE
   const script = scriptEvents(req.task, owner, delegation);
   const events: RunEvent[] = [];
   const runId = (script[0].ev as Extract<RunEvent, { type: "run_started" }>).runId;
-  for (const { ev, wait, gate } of script) {
+  for (const { ev: ev0, wait, gate } of script) {
+    let ev = ev0;
     await sleep(wait, signal);
     if (gate) {
       onEvent(ev); events.push(ev);
@@ -138,6 +139,11 @@ export async function mockRun(req: RunRequest, house: boolean, onEvent: (e: RunE
         return;
       }
       continue;
+    }
+    if (ev.type === "pulled" && !house && world.allowances[0]) {
+      const a = world.allowances[0];
+      a.remainingBase = (BigInt(a.remainingBase) - BigInt(ev.amountBase)).toString();
+      ev = { ...ev, remainingBase: a.remainingBase };
     }
     onEvent(ev); events.push(ev);
     if (ev.type === "delivered") {
