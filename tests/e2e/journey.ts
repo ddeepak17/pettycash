@@ -32,7 +32,7 @@ async function runErrand(page: Page, buttonLabel: RegExp) {
     const approve = page.getByRole("button", { name: /^Approve/ });
     if (await approve.count()) { await snap(page, `approval-${++approvals}`); await approve.first().click(); note("approved a purchase that asked"); }
     if (await page.getByTestId("run-end").count()) break;
-    if (await page.getByText(/^Stopped\./).count() || await page.getByRole("alert").count()) break;
+    if (await page.getByText(/^Stopped\./).count() || await page.getByTestId("run-tape").getByRole("alert").count()) break;
     await page.waitForTimeout(1000);
   }
   note(`errand ended after ${Math.round((Date.now() - started) / 1000)}s`);
