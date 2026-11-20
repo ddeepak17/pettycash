@@ -50,7 +50,7 @@ export const limits = () => ({
   /** Most a single run on the public demo petty cash may spend. Default $0.03. */
   houseRunBudgetBase: big("HOUSE_RUN_BUDGET_BASE", 30_000n),
   maxSteps: Number(env("MAX_STEPS") ?? 6),
-  approvalWaitMs: Number(env("APPROVAL_WAIT_MS") ?? 90_000),
+  approvalWaitMs: Number(env("APPROVAL_WAIT_MS") ?? 60_000),
   houseRunsPerHourPerIp: Number(env("HOUSE_RUNS_PER_HOUR_PER_IP") ?? 4),
   houseRunsPerHour: Number(env("HOUSE_RUNS_PER_HOUR") ?? 40),
 });

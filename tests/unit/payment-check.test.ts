@@ -17,7 +17,7 @@ const b64 = (ixs: TransactionInstruction[], payer = facilitator) =>
 
 describe("pre-send payment check", () => {
   it("accepts exactly the quoted transfer and returns the memo", () => {
-    expect(assertPaymentIsExactlyTheQuote(b64([...budget, transfer(), memo]), expected)).toEqual({ memo: "abc123" });
+    expect(assertPaymentIsExactlyTheQuote(b64([...budget, transfer(), memo]), expected)).toEqual({ memo: "abc123", blockhash: "11111111111111111111111111111111" });
   });
   it("accepts a payment without a memo", () => expect(assertPaymentIsExactlyTheQuote(b64([...budget, transfer()]), expected).memo).toBeNull());
   it("refuses a different amount", () => expect(() => assertPaymentIsExactlyTheQuote(b64([...budget, transfer(1001n)]), expected)).toThrow(/amount/));

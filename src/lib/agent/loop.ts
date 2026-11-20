@@ -30,6 +30,8 @@ export type RunOptions = {
   limits: { perPurchaseMax: bigint; approvalThreshold: bigint; runBudget: bigint; approvalWaitMs: number; maxSteps: number };
   emit: (e: RunEvent) => Promise<void> | void;
   signal?: AbortSignal;
+  /** Unix ms after which no new step starts, so the run always ends inside the server's time limit. */
+  deadlineAt?: number;
   /** Tests replace the real sellers with local ones. Production always uses the catalog. */
   catalog?: { sellers: Seller[]; reasoning: { name: string; host: string; url: string; payTo: string; maxPriceBase: string; timeoutMs: number } };
 };
@@ -125,6 +127,7 @@ export async function runAgent(o: RunOptions): Promise<RunResult> {
 
   for (let step = 1; step <= o.limits.maxSteps; step++) {
     if (o.signal?.aborted) return finish("stopped", null);
+    if (o.deadlineAt && Date.now() > o.deadlineAt) return finish("failed", "I ran out of time before I could finish. Nothing more was spent.");
     const last = step === o.limits.maxSteps;
     if (last) messages.push({ role: "user", content: "This is your last step. Reply with the answer action now, using what you have." });
 

@@ -33,7 +33,10 @@ export class TransactionExpired extends Error {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Signs, simulates, broadcasts and waits for `confirmed`. Throws TransactionFailed with program logs when the chain refuses. */
-export async function sendAndConfirm(instructions: TransactionInstruction[], feePayer: PublicKey, signers: Signer[], opts: { skipPreflight?: boolean; commitment?: Commitment } = {}): Promise<{ signature: string; slot: number; ms: number }> {
+export async function sendAndConfirm(
+  instructions: TransactionInstruction[], feePayer: PublicKey, signers: Signer[],
+  opts: { skipPreflight?: boolean; commitment?: Commitment; /** Called after signing and simulation, BEFORE the transaction is broadcast, so the caller can write the signature down first. */ onSigned?: (signature: string, lastValidBlockHeight: number) => Promise<void> } = {},
+): Promise<{ signature: string; slot: number; ms: number }> {
   const started = Date.now();
   const { blockhash, lastValidBlockHeight } = await read((c) => c.getLatestBlockhash("confirmed"));
   const tx = new Transaction({ feePayer, blockhash, lastValidBlockHeight }).add(...instructions);
@@ -46,6 +49,7 @@ export async function sendAndConfirm(instructions: TransactionInstruction[], fee
     if (sim.value.err) throw new TransactionFailed(null, sim.value.err, sim.value.logs ?? []);
   }
 
+  if (opts.onSigned) await opts.onSigned(signature, lastValidBlockHeight);
   const broadcast = () => Promise.allSettled(rpcUrls().map((u) => conn(u).sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 })));
   await broadcast();
   let lastBroadcast = Date.now();
@@ -70,4 +74,37 @@ export async function simulate(instructions: TransactionInstruction[], feePayer:
   tx.sign(...signers);
   const sim = await read((c) => c.simulateTransaction(tx));
   return { err: sim.value.err, logs: sim.value.logs ?? [] };
+}
+
+export type Outcome = "landed" | "failed" | "expired" | "unknown";
+
+/** What became of a transaction we signed earlier. "expired" is only returned when it can never land any more. */
+export async function signatureOutcome(signature: string, lastValidBlockHeight: number | null): Promise<Outcome> {
+  try {
+    const status = (await read((c) => c.getSignatureStatuses([signature], { searchTransactionHistory: true }))).value[0];
+    if (status) {
+      if (status.err) return "failed";
+      return status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized" ? "landed" : "unknown";
+    }
+    if (lastValidBlockHeight === null) return "unknown";
+    // Not found. It is only certain that it will never land once the chain has FINALIZED past its last valid height.
+    const height = await read((c) => c.getBlockHeight("finalized"));
+    if (height <= lastValidBlockHeight) return "unknown";
+    // Look once more: it may have landed between the two reads.
+    const again = (await read((c) => c.getSignatureStatuses([signature], { searchTransactionHistory: true }))).value[0];
+    if (again) return again.err ? "failed" : "landed";
+    return "expired";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** True only when the chain says this blockhash can no longer be used, so a transaction built on it can never land. */
+export async function blockhashExpired(blockhash: string): Promise<boolean | null> {
+  try {
+    const r = await read((c) => c.isBlockhashValid(blockhash, { commitment: "finalized" }));
+    return r.value === false;
+  } catch {
+    return null;
+  }
 }

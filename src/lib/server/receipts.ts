@@ -9,9 +9,11 @@ import { agentPublicKey } from "./config";
 import { updatePurchase, type PurchaseRow } from "./store";
 
 const STATUS: Record<string, Receipt["status"]> = {
-  denied: "denied", awaiting_approval: "awaiting_approval", pulled: "pulled", paid: "paid", delivered: "delivered",
-  failed: "failed", refunded: "refunded", refund_pending: "failed", quoted: "failed",
+  denied: "denied", awaiting_approval: "awaiting_approval", pulling: "pulled", pulled: "pulled", paying: "pulled", paid: "paid", delivered: "delivered",
+  failed: "failed", refunded: "refunded", refund_pending: "failed", refunding: "failed", quoted: "failed",
 };
+/** A seller's address without the query string. The query can hold the person's search words, which stay private. */
+const publicUrl = (url: string) => url.split("?")[0];
 
 export async function toReceipts(rows: PurchaseRow[]): Promise<Receipt[]> {
   const agent = agentPublicKey().toBase58();
@@ -23,7 +25,7 @@ export async function toReceipts(rows: PurchaseRow[]): Promise<Receipt[]> {
     let payProof = r.pay_sig ? proofs.get(r.pay_sig) ?? null : null;
     let paySignature = r.pay_sig;
     // The seller did not tell us which transaction paid it. The Stream can: look for the exact transfer after the pull.
-    if (!paySignature && pullProof && (r.status === "delivered" || r.status === "paid" || r.status === "refund_pending")) {
+    if (!paySignature && pullProof && (r.status === "delivered" || r.status === "paid" || r.status === "paying")) {
       payProof = await findPaymentProof({ agent, payTo: r.pay_to, mint: r.mint, amountBase: String(r.amount_base), afterSlot: pullProof.slot - 1, memo: r.pay_memo ?? undefined, purchaseId: r.id }).catch(() => null);
       if (payProof) {
         paySignature = payProof.signature;
@@ -34,7 +36,7 @@ export async function toReceipts(rows: PurchaseRow[]): Promise<Receipt[]> {
     const payCheck = checkReceipt(payProof, { kind: "payment", agent, payTo: r.pay_to, mint: r.mint, amountBase: String(r.amount_base) });
     out.push({
       id: r.id, runId: r.run_id, owner: r.owner, kind: r.kind,
-      seller: { id: r.tool_id, name: r.seller_name ?? r.seller_host, host: r.seller_host, url: r.seller_url },
+      seller: { id: r.tool_id, name: r.seller_name ?? r.seller_host, host: r.seller_host, url: publicUrl(r.seller_url) },
       payTo: r.pay_to, amountBase: String(r.amount_base), status: STATUS[r.status] ?? "failed",
       pullSignature: r.pull_sig, paySignature, refundSignature: r.refund_sig, httpStatus: r.http_status,
       responseSha256: r.response_sha256, responseBytes: r.response_bytes, createdAt: new Date(r.created_at).getTime(),

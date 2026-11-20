@@ -20,21 +20,22 @@ export function parseAddress(value: unknown): PublicKey | null {
   try { return new PublicKey(value); } catch { return null; }
 }
 
-/** The message a wallet signs. The last line is our own tag, so only messages we issued are accepted. */
-export function makeChallenge(owner: string, now = Date.now()): { message: string; expiresAt: number } {
+/** The message a wallet signs. It names this site, so a signature collected by another site is visibly for the wrong
+ *  place, and its last line is our own tag, so only messages we issued are accepted. */
+export function makeChallenge(owner: string, host: string, now = Date.now()): { message: string; expiresAt: number } {
   const expiresAt = now + CHALLENGE_TTL_MS;
   const nonce = randomBytes(12).toString("base64url");
-  const head = `Petty Cash sign-in\n\nWallet: ${owner}\nThis proves the wallet is yours. It is free and is not a transaction.\n\nNonce: ${nonce}\nExpires: ${expiresAt}`;
+  const head = `${host} wants you to sign in to Petty Cash with your Solana account:\n${owner}\n\nThis proves the wallet is yours. It is free and is not a transaction.\n\nSite: ${host}\nNonce: ${nonce}\nExpires: ${expiresAt}`;
   return { message: `${head}\nTag: ${hmac(head)}`, expiresAt };
 }
 
-export function verifyChallenge(owner: string, message: string, signatureBase64: string, now = Date.now()): boolean {
-  if (typeof message !== "string" || message.length > 600 || typeof signatureBase64 !== "string") return false;
+export function verifyChallenge(owner: string, host: string, message: string, signatureBase64: string, now = Date.now()): boolean {
+  if (typeof message !== "string" || message.length > 700 || typeof signatureBase64 !== "string") return false;
   const i = message.lastIndexOf("\nTag: ");
   if (i < 0) return false;
   const head = message.slice(0, i), tag = message.slice(i + 6);
   if (!safeEqual(tag, hmac(head))) return false;
-  if (!head.includes(`\nWallet: ${owner}\n`)) return false;
+  if (!head.startsWith(`${host} wants you to sign in to Petty Cash with your Solana account:\n${owner}\n`) || !head.includes(`\nSite: ${host}\n`)) return false;
   const expires = Number(/\nExpires: (\d+)$/.exec(head)?.[1] ?? 0);
   if (!expires || expires < now) return false;
   const key = parseAddress(owner);
@@ -44,6 +45,9 @@ export function verifyChallenge(owner: string, message: string, signatureBase64:
   if (sig.length !== 64) return false;
   return nacl.sign.detached.verify(new TextEncoder().encode(message), sig, key.toBytes());
 }
+
+/** The host this request was made to, as the platform reports it. */
+export const requestHost = (req: Request) => (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").toLowerCase();
 
 export function makeSession(owner: string, now = Date.now()): { value: string; maxAgeSecs: number } {
   const body = Buffer.from(JSON.stringify({ o: owner, e: now + SESSION_TTL_MS })).toString("base64url");
@@ -69,7 +73,9 @@ export function sessionOwner(req: Request): string | null {
 export const sessionCookie = (value: string, maxAgeSecs: number) =>
   `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSecs}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
 
-export const clientIp = (req: Request) => (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+/** The caller's address as set by the hosting platform (these headers are overwritten at the edge, not taken from the caller). */
+export const clientIp = (req: Request) =>
+  (req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
 
 /** Refuses cross-site POSTs: the Origin header, when present, must be our own host. */
 export function sameOrigin(req: Request): boolean {

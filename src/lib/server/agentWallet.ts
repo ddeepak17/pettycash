@@ -85,13 +85,17 @@ const pullIx = (a: LiveAllowance, amount: bigint) => {
 };
 
 /** Moves exactly `amount` from the owner's wallet to the agent under the petty cash. Throws ChainRefused when the program says no. */
-export async function pull(allowance: LiveAllowance, amount: bigint): Promise<{ signature: string; slot: number; ms: number }> {
+type OnSigned = (signature: string, lastValidBlockHeight: number) => Promise<void>;
+
+/** Moves exactly `amount` from the owner's wallet to the agent under the petty cash. Throws ChainRefused when the program says no.
+ *  `onSigned` runs before the transaction is broadcast, so its signature is on record before it can land. */
+export async function pull(allowance: LiveAllowance, amount: bigint, onSigned?: OnSigned): Promise<{ signature: string; slot: number; ms: number }> {
   const agent = agentKeypair();
   const mint = usdcMint();
   try {
     return await sendAndConfirm(
       [...budget(90_000), createAssociatedTokenAccountIdempotentInstruction(agent.publicKey, ata(agent.publicKey, mint), agent.publicKey, mint), pullIx(allowance, amount)],
-      agent.publicKey, [agent],
+      agent.publicKey, [agent], { onSigned },
     );
   } catch (e) {
     throw toChainRefused(e) ?? e;
@@ -99,12 +103,12 @@ export async function pull(allowance: LiveAllowance, amount: bigint): Promise<{ 
 }
 
 /** Returns `amount` from the agent to the owner's own token account. Used when a purchase did not complete. */
-export async function refund(owner: PublicKey, amount: bigint): Promise<{ signature: string; slot: number; ms: number }> {
+export async function refund(owner: PublicKey, amount: bigint, onSigned?: OnSigned): Promise<{ signature: string; slot: number; ms: number }> {
   const agent = agentKeypair();
   const mint = usdcMint();
   return sendAndConfirm(
     [...budget(40_000), createTransferCheckedInstruction(ata(agent.publicKey, mint), mint, ata(owner, mint), agent.publicKey, amount, USDC_DECIMALS)],
-    agent.publicKey, [agent],
+    agent.publicKey, [agent], { onSigned },
   );
 }
 
@@ -118,7 +122,9 @@ export async function proveOverspend(address: PublicKey, send: boolean): Promise
   if (!allowance) {
     return { attemptedBase: "1", remainingBase: "0", refused: true, code: null, name: "allowanceMissing", plain: "This petty cash no longer exists onchain, so nothing can be pulled from it.", signature: null, logs: [] };
   }
-  const attempt = allowance.remaining + 1n;
+  // One base unit more than can ever be allowed right now. For a recurring petty cash that is the whole period amount
+  // plus one, so the test stays valid even if a new period starts while it runs.
+  const attempt = (allowance.view.type === "recurring" ? allowance.view.amountPerPeriod : allowance.remaining) + 1n;
   const ixs = [...budget(90_000), pullIx(allowance, attempt)];
   const result = (refused: boolean, code: number | null, name: string, plain: string, signature: string | null, logs: string[]): ProofResult =>
     ({ attemptedBase: attempt.toString(), remainingBase: allowance.remaining.toString(), refused, code, name, plain, signature, logs: logs.slice(-12) });
@@ -127,14 +133,18 @@ export async function proveOverspend(address: PublicKey, send: boolean): Promise
     if (!sim.err) return result(false, null, "notRefused", "The chain did not refuse this pull. That should never happen; please report it.", null, sim.logs);
     const code = allowancesErrorCode(`${JSON.stringify(sim.err)} ${sim.logs.join(" ")}`);
     const known = code !== null ? ALLOWANCES_ERRORS[code] : undefined;
-    return result(true, code, known?.name ?? "refused", known?.plain ?? "Solana's Allowances program refused this pull.", null, sim.logs);
+    // Only a refusal that came from the Allowances program itself counts. Anything else (for example the agent
+    // being out of SOL for the fee) is reported as a test that could not run, never as a refusal.
+    const fromProgram = sim.logs.some((l) => l.includes(`Program ${ALLOWANCES_PROGRAM_ID.toBase58()} failed`));
+    if (!known || !fromProgram) throw new Error("The limit test could not be run just now.");
+    return result(true, code, known.name, known.plain, null, sim.logs);
   }
   try {
     const sent = await sendAndConfirm(ixs, agent.publicKey, [agent], { skipPreflight: true });
     return result(false, null, "notRefused", "The chain did not refuse this pull. That should never happen; please report it.", sent.signature, []);
   } catch (e) {
     const refused = toChainRefused(e);
-    if (refused) return result(true, refused.code, refused.name, refused.plain, refused.signature, refused.logs);
-    throw e;
+    if (refused && refused.code !== null && ALLOWANCES_ERRORS[refused.code]) return result(true, refused.code, refused.name, refused.plain, refused.signature, refused.logs);
+    throw new Error("The limit test could not be run just now.");
   }
 }

@@ -11,7 +11,11 @@ import type { PublicConfig } from "@/lib/types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+let cached: { at: number; body: PublicConfig } | null = null;
+
 export async function GET() {
+  // The same answer serves everyone for a few seconds, so page loads cannot be turned into a stream of chain reads.
+  if (cached && Date.now() - cached.at < 4000) return json(cached.body);
   const l = limits();
   const h = house();
   const [live, records, streamActive] = await Promise.all([
@@ -32,5 +36,6 @@ export async function GET() {
       { id: REASONING_SELLER.id, name: REASONING_SELLER.name, host: REASONING_SELLER.host, kind: REASONING_SELLER.kind, description: REASONING_SELLER.description, lastPriceBase: REASONING_SELLER.lastPriceBase, record: records.reasoning ?? { purchases: 0, delivered: 0 } },
     ],
   };
+  cached = { at: Date.now(), body: config };
   return json(config);
 }

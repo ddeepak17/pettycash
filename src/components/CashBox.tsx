@@ -23,7 +23,8 @@ export function CashBox({ config, state, selected, onSelect, onChanged, onSigned
   const test = async () => {
     if (!selected) return;
     setProof({ busy: true });
-    try { setProof({ busy: false, result: await api.proveOverspend(selected.address, selected.remainingBase, true) }); }
+    // Recording the refusal onchain is only offered to the wallet that owns the petty cash, so sign in first (free).
+    try { await signIn(w); onSignedIn(); setProof({ busy: false, result: await api.proveOverspend(selected.address, selected.remainingBase, true) }); }
     catch (e) { setProof({ busy: false, error: explainError(e) }); }
   };
   const revoke = async () => {
@@ -107,7 +108,7 @@ function Meter({ a, cluster, agent }: { a: Allowance; cluster: PublicConfig["clu
   );
 }
 
-function ProofView({ r, cluster }: { r: ProofResult; cluster: PublicConfig["cluster"] }) {
+export function ProofView({ r, cluster }: { r: ProofResult; cluster: PublicConfig["cluster"] }) {
   return (
     <div>
       <p className={`text-lg font-semibold ${r.refused ? "text-accent" : "text-bad"}`}>{r.refused ? "Solana refused it. The limit holds." : "The test did not get refused. Treat this as a problem."}</p>

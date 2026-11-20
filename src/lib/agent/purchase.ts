@@ -1,17 +1,23 @@
 // One purchase, start to finish:
-//   quote (unpaid) -> rule check -> ask a person if needed -> pull the exact price from the owner's wallet under
-//   the petty cash -> pay the seller over x402 -> record what came back -> give the money back if it did not complete.
 //
-// Money moves in exactly two places: `pull` (owner -> agent, limited by Solana's Allowances program) and
-// `payQuote` (agent -> seller, checked instruction by instruction before it is sent).
+//   quote (unpaid) -> rule check -> ask a person if needed -> build and check the payment (nothing sent yet)
+//   -> pull the exact price from the owner's wallet under the petty cash -> send the payment -> record the result.
+//
+// Money moves in exactly two places: `pull` (owner -> agent, limited by Solana's Allowances program) and the
+// x402 payment (agent -> seller, checked instruction by instruction before it is sent).
+//
+// Nothing here trusts a seller's word about money. A purchase stays "open" until our own read of the chain
+// confirms its payment. If the payment never lands, the money goes back to the owner, exactly once. Enough is
+// written to the database BEFORE each transaction is broadcast that a purchase interrupted at any point (server
+// stopped, RPC timeout) can be settled later from chain state alone: see settleUnresolved().
 import { PublicKey } from "@solana/web3.js";
 import { formatUsd } from "../solana/cluster";
-import { getQuote, payQuote, type Quote, type SellerRequest } from "../x402/client";
+import { buildPayment, getQuote, sendPayment, type Quote, type SellerRequest } from "../x402/client";
 import type { RunEvent, SellerRef } from "../types";
 import { agentKeypair, agentPublicKey, cluster, network, usdcMint } from "../server/config";
 import { ChainRefused, pull, readAllowance, refund } from "../server/agentWallet";
-import { primaryRpcUrl, read } from "../server/rpc";
-import { insertPurchase, updatePurchase, waitForApproval, setRunStatus, unresolvedPurchases, saveArtifact, claimRefund, releaseStaleRefundClaims, type PurchaseRow } from "../server/store";
+import { blockhashExpired, primaryRpcUrl, read, signatureOutcome, TransactionFailed } from "../server/rpc";
+import { claimRefund, getPurchase, insertPurchase, openPurchases, paySignatureTaken, saveArtifact, setRunStatus, touchPurchase, updatePurchase, waitForApproval, type PurchaseRow } from "../server/store";
 import { ata } from "../solana/allowances";
 import { decide, type PolicyDecision } from "./policy";
 
@@ -38,6 +44,7 @@ export type PurchaseContext = {
 
 export type PurchaseOutcome =
   | { ok: true; purchaseId: string; amount: bigint; text: string; contentType: string | null }
+  /** `paid` is what may have left the petty cash for good; the errand's budget counts it. */
   | { ok: false; purchaseId: string | null; stage: "quote" | "policy" | "pull" | "payment" | "delivery"; error: string; chainRefused: boolean; paid: bigint };
 
 const preview = (text: string, n = 1200) => (text.length > n ? `${text.slice(0, n)}…` : text);
@@ -62,24 +69,22 @@ export function findImage(body: string): { contentType: string; bytes: Buffer } 
     : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP" ? "image/webp" : null;
   return contentType ? { contentType, bytes } : null;
 }
-/** How long after a payment was signed it can still land: Solana blockhashes live about 60 to 90 seconds; we wait longer. */
-const UNRESOLVED_WINDOW_MS = Number(process.env.UNRESOLVED_WINDOW_MS ?? 150_000);
-/** A purchase stuck at "pulled" for this long was abandoned before a payment existed. */
-const STALE_PULL_MS = Number(process.env.STALE_PULL_MS ?? 6 * 60_000);
+
+/** After a seller fails or goes quiet, how long before we even look for the payment. The decision itself never
+ *  rests on time alone: money is only returned once the payment's blockhash has expired on a finalized block. */
+const GRACE_MS = Number(process.env.UNRESOLVED_GRACE_MS ?? 20_000);
+/** Rehearsals on a local validator may skip the wait for blockhash expiry. Never honoured on mainnet. */
+const trustWindowOnly = () => process.env.REHEARSAL_TRUST_WINDOW_ONLY === "1" && cluster() !== "mainnet-beta";
 
 export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Promise<PurchaseOutcome> {
-  const sellerRef: SellerRef = { id: target.toolId, name: target.seller.name, host: target.seller.host, url: target.request.url };
+  const sellerRef: SellerRef = { id: target.toolId, name: target.seller.name, host: target.seller.host, url: target.request.url.split("?")[0] };
   const mint = usdcMint();
   const want = { network: network(), asset: mint.toBase58() };
 
   // 1. Ask for the price. Nothing is paid or signed here.
   const q = await getQuote(target.request, want);
-  if (q.kind === "error") {
-    return { ok: false, purchaseId: null, stage: "quote", error: q.error, chainRefused: false, paid: 0n };
-  }
-  if (q.kind === "free") {
-    return { ok: true, purchaseId: "", amount: 0n, text: q.body, contentType: null };
-  }
+  if (q.kind === "error") return { ok: false, purchaseId: null, stage: "quote", error: q.error, chainRefused: false, paid: 0n };
+  if (q.kind === "free") return { ok: true, purchaseId: "", amount: 0n, text: q.body, contentType: null };
   const quote: Quote = q.quote;
   const amount = BigInt(quote.offer.amount);
 
@@ -123,105 +128,193 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
       return failed("policy", decision === "denied" ? "You said no to this purchase." : "Nobody approved this purchase in time.");
     }
   }
+  if (!live) return failed("policy", "This petty cash no longer exists onchain. It was revoked or has been closed.");
 
-  // 3. Pull exactly the price from the owner's wallet. Solana's Allowances program decides whether this is allowed.
+  // 3. Build, sign and check the payment BEFORE any money moves. Signing needs no balance. If the payment cannot
+  //    be built, or is not exactly the quoted transfer, we stop here and nothing has left the owner's wallet.
+  const built = await buildPayment(quote, agentKeypair().secretKey, { rpcUrl: primaryRpcUrl(), mint: mint.toBase58() });
+  if (!built.ok) {
+    await updatePurchase(purchaseId, { status: "failed", error: built.error });
+    return failed("payment", `${built.error} Nothing was spent.`);
+  }
+  const payment = built.payment;
+
+  // 4. Pull exactly the price from the owner's wallet. Solana's Allowances program decides whether this is allowed.
+  //    The pull's signature and the payment's memo are on record before the pull is broadcast.
   let pulled: { signature: string; slot: number; ms: number };
   try {
-    if (!live) throw new ChainRefused(null, "allowanceMissing", "This petty cash no longer exists onchain. It was revoked or has been closed.", null, []);
-    pulled = await pull(live, amount);
+    pulled = await pull(live, amount, async (signature, lastValidBlockHeight) => {
+      await updatePurchase(purchaseId, { status: "pulling", pull_sig: signature, pull_last_valid_height: lastValidBlockHeight, pay_memo: payment.memo, pay_blockhash: payment.blockhash });
+    });
   } catch (e) {
     if (e instanceof ChainRefused) {
       await updatePurchase(purchaseId, { status: "failed", error: `Refused by Solana: ${e.plain}` });
       await ctx.emit({ type: "chain_refused", purchaseId, code: e.code, name: e.name, plain: e.plain });
       return failed("pull", e.plain, { chainRefused: true });
     }
-    const msg = e instanceof Error ? e.message : "The pull did not go through.";
-    await updatePurchase(purchaseId, { status: "failed", error: msg });
+    if (e instanceof TransactionFailed) {
+      // Simulation failed, or the transaction landed and failed: either way no money moved.
+      await updatePurchase(purchaseId, { status: "failed", error: "The transfer from the wallet failed." });
+      return failed("pull", "The money could not be moved from the wallet. Nothing was spent.");
+    }
+    // The pull was broadcast and we could not confirm it. It may still have landed: the reconciler finds out.
+    const row = await getPurchase(purchaseId).catch(() => null);
+    if (row?.status === "pulling") return failed("pull", "The transfer from the wallet could not be confirmed. If it did go through, the money is returned automatically within a few minutes.", { refund: { status: "pending" } });
+    await updatePurchase(purchaseId, { status: "failed", error: "The transfer from the wallet could not be sent." }).catch(() => {});
     return failed("pull", "The money could not be moved from the wallet. Nothing was spent.");
   }
-  await updatePurchase(purchaseId, { status: "pulled", pull_sig: pulled.signature });
+  // From here on a payment may be in flight. The row stays open until the chain itself settles the question.
+  await updatePurchase(purchaseId, { status: "paying", unresolved_until: new Date(Date.now() + target.timeoutMs + GRACE_MS) });
   const after = await readAllowance(ctx.allowance).catch(() => null);
   await ctx.emit({ type: "pulled", purchaseId, signature: pulled.signature, amountBase: amount.toString(), remainingBase: (after?.remaining ?? (live.remaining - amount)).toString(), ms: pulled.ms });
 
-  // 4. Pay the seller. The signed transfer is checked against the quote before it leaves this process.
-  //    Before sending, we record the payment's memo and mark the outcome as open, so that if this server stops
-  //    mid-purchase the reconciler can still find the payment onchain or return the money.
-  const paid = await payQuote(quote, agentKeypair().secretKey, {
-    rpcUrl: primaryRpcUrl(), mint: mint.toBase58(), timeoutMs: target.timeoutMs,
-    beforeSend: (memo) => updatePurchase(purchaseId, { status: "refund_pending", pay_memo: memo, unresolved_until: new Date(Date.now() + UNRESOLVED_WINDOW_MS + target.timeoutMs) }),
-  });
+  // 5. Send the payment that was built and checked in step 3.
+  const paid = await sendPayment(quote, payment, target.timeoutMs);
+  const delivered = paid.httpStatus !== null && paid.httpStatus >= 200 && paid.httpStatus < 300 && !paid.error;
+  // A seller's reported signature is kept only if no other purchase already claims it. It is confirmed onchain later.
+  const reported = paid.signature && !(await paySignatureTaken(paid.signature, purchaseId).catch(() => true)) ? paid.signature : null;
 
-  if (!paid.sent) {
-    // The payment never left, so nobody else holds a signed transfer: giving the money back now is safe.
-    await updatePurchase(purchaseId, { status: "refund_pending", error: paid.error, unresolved_until: new Date() });
-    const back = await refundPurchase(purchaseId, ctx.owner, amount);
-    return failed("payment", paid.error ?? "The payment could not be sent.", { refund: back ? { status: "refunded", signature: back } : { status: "pending" } });
-  }
-
-  const delivered = paid.httpStatus !== null && paid.httpStatus >= 200 && paid.httpStatus < 300;
   if (delivered) {
     await updatePurchase(purchaseId, {
-      status: "delivered", pay_sig: paid.signature, pay_memo: paid.memo, unresolved_until: null, http_status: paid.httpStatus, response_sha256: paid.sha256,
+      status: "delivered", pay_sig: reported, unresolved_until: new Date(Date.now() + GRACE_MS), http_status: paid.httpStatus, response_sha256: paid.sha256,
       response_bytes: paid.bodyBytes, response_preview: preview(paid.bodyText, 600),
     });
-    await ctx.emit({ type: "paid", purchaseId, signature: paid.signature, httpStatus: paid.httpStatus!, ms: paid.ms });
+    await ctx.emit({ type: "paid", purchaseId, signature: reported, httpStatus: paid.httpStatus!, ms: paid.ms });
     const image = findImage(paid.bodyText);
     if (image) await saveArtifact(purchaseId, image.contentType, image.bytes).catch(() => {});
     await ctx.emit({ type: "delivered", purchaseId, bytes: paid.bodyBytes, sha256: paid.sha256 ?? "", preview: image ? `[an image, ${Math.round(image.bytes.length / 1024)} KB]` : preview(paid.bodyText) });
     return { ok: true, purchaseId, amount, text: paid.bodyText, contentType: paid.contentType };
   }
 
-  // The payment was sent but the seller did not deliver.
-  if (paid.settled && paid.signature) {
-    // The seller reported taking the money and still failed. We record that honestly; x402 has no refund from a seller.
-    await updatePurchase(purchaseId, { status: "paid", pay_sig: paid.signature, pay_memo: paid.memo, unresolved_until: null, http_status: paid.httpStatus, error: paid.error });
-    await ctx.emit({ type: "paid", purchaseId, signature: paid.signature, httpStatus: paid.httpStatus ?? 0, ms: paid.ms });
-    return failed("delivery", `${target.seller.name} took the payment of ${formatUsd(amount)} but did not deliver (HTTP ${paid.httpStatus}).`, { paid: amount });
+  // The seller did not deliver. Whether it was paid is decided by the chain, not by what it told us.
+  await updatePurchase(purchaseId, { pay_sig: reported, http_status: paid.httpStatus, error: paid.error, unresolved_until: new Date(Date.now() + GRACE_MS) });
+  if (paid.settled && reported) {
+    await ctx.emit({ type: "paid", purchaseId, signature: reported, httpStatus: paid.httpStatus ?? 0, ms: paid.ms });
+    return failed("delivery", `${target.seller.name} reported taking the payment of ${formatUsd(amount)} but did not deliver (HTTP ${paid.httpStatus}). We are checking the chain; if the payment did not land, the money is returned.`, { paid: amount });
   }
-  // Outcome unknown: the signed payment may still land until its blockhash expires. Decide later, never guess.
-  await updatePurchase(purchaseId, { status: "refund_pending", pay_memo: paid.memo, http_status: paid.httpStatus, error: paid.error, unresolved_until: new Date(Date.now() + UNRESOLVED_WINDOW_MS) });
-  return failed("payment", `${paid.error ?? "The seller did not confirm the payment."} If the payment did not go through, the money returns to the wallet within a few minutes.`, { refund: { status: "pending" } });
+  return failed("payment", `${paid.error ?? "The seller did not confirm the payment."} If the payment did not go through, the money returns to the wallet within a few minutes.`, { refund: { status: "pending" }, paid: amount });
 }
 
-/** Returns a purchase's money to its owner exactly once. Returns the refund signature, or null if someone else is
- *  already handling it or the transfer failed (it is then retried by the reconciler). */
-async function refundPurchase(purchaseId: string, owner: PublicKey, amount: bigint): Promise<string | null> {
-  if (!(await claimRefund(purchaseId))) return null;
+// ── Reconciliation ───────────────────────────────────────────────────────────
+
+const memoMatches = (field: string | null | undefined, memo: string) =>
+  !!field && field.split("; ").some((part) => part.replace(/^\[\d+\]\s*/, "") === memo);
+
+/** Reads one transaction and decides whether it is exactly this purchase's payment: it succeeded, the agent's
+ *  holdings of the token fell by the amount and the recipient's rose by the amount. */
+async function isThePayment(signature: string, p: PurchaseRow): Promise<boolean | "unknown"> {
+  let tx;
+  try { tx = await read((c) => c.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 })); } catch { return "unknown"; }
+  if (!tx || !tx.meta) return false;
+  if (tx.meta.err) return false;
+  const meta = tx.meta;
+  const agent = agentPublicKey().toBase58();
+  const sum = (list: typeof meta.preTokenBalances, owner: string) => (list ?? []).filter((b) => b.owner === owner && b.mint === p.mint).reduce((n, b) => n + BigInt(b.uiTokenAmount.amount), 0n);
+  const delta = (owner: string) => sum(meta.postTokenBalances, owner) - sum(meta.preTokenBalances, owner);
+  const amount = BigInt(p.amount_base);
+  return delta(agent) === -amount && delta(p.pay_to) === amount;
+}
+
+/** Looks for this purchase's payment among the agent token account's transactions since the pull.
+ *  Returns the signature, null when it is certain there is none yet, or "unknown" when the chain could not be read. */
+async function findPaymentOnchain(p: PurchaseRow): Promise<string | null | "unknown"> {
+  const candidates: string[] = [];
+  if (p.pay_sig) candidates.push(p.pay_sig);
+  let complete = false;
+  if (p.pay_memo && p.pull_sig) {
+    const agentAta = ata(agentPublicKey(), new PublicKey(p.mint));
+    let before: string | undefined;
+    for (let page = 0; page < 10 && !complete; page++) {
+      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 1000, before, until: p.pull_sig! }, "confirmed")).catch(() => null);
+      if (sigs === null) return "unknown";
+      for (const s of sigs) if (!s.err && memoMatches(s.memo, p.pay_memo) && !candidates.includes(s.signature)) candidates.push(s.signature);
+      if (sigs.length < 1000) complete = true; else before = sigs[sigs.length - 1].signature;
+    }
+  }
+  for (const signature of candidates) {
+    if (await paySignatureTaken(signature, p.id).catch(() => true)) continue; // one payment can settle one purchase only
+    const match = await isThePayment(signature, p);
+    if (match === "unknown") return "unknown";
+    if (match) return signature;
+  }
+  return complete ? null : "unknown";
+}
+
+/** Returns a purchase's money to its owner exactly once. The refund's signature is on record before it is broadcast,
+ *  so an unconfirmed refund is looked up, never blindly repeated. */
+async function refundPurchase(p: Pick<PurchaseRow, "id" | "owner" | "amount_base">): Promise<string | null> {
+  if (!(await claimRefund(p.id))) return null;
   try {
-    const back = await refund(owner, amount);
-    await updatePurchase(purchaseId, { status: "refunded", refund_sig: back.signature });
+    const back = await refund(new PublicKey(p.owner), BigInt(p.amount_base), async (signature, lastValidBlockHeight) => {
+      await updatePurchase(p.id, { refund_try_sig: signature, refund_try_height: lastValidBlockHeight });
+    });
+    await updatePurchase(p.id, { status: "refunded", refund_sig: back.signature, unresolved_until: null });
     return back.signature;
-  } catch {
-    await updatePurchase(purchaseId, { status: "refund_pending", unresolved_until: new Date(Date.now() + 30_000) });
+  } catch (e) {
+    // Simulation failed or it failed onchain: nothing moved, so it is safe to try again later.
+    if (e instanceof TransactionFailed) await updatePurchase(p.id, { status: "refund_pending", refund_try_sig: null, refund_try_height: null }).catch(() => {});
+    // Otherwise the outcome is unknown: the row stays "refunding" with its signature, and is checked before any retry.
     return null;
   }
 }
 
-/** Settles purchases whose outcome was unclear: if the payment landed, record it; if it can no longer land, return the money. */
-export async function settleUnresolved(owner?: string): Promise<{ checked: number; refunded: number; foundPaid: number }> {
-  await releaseStaleRefundClaims().catch(() => {});
-  const rows: PurchaseRow[] = await unresolvedPurchases(owner);
-  let refunded = 0, foundPaid = 0;
-  const agentAta = ata(agentPublicKey(), usdcMint());
+/**
+ * Settles every purchase whose money is not yet accounted for. Safe to run from several places at once.
+ *
+ *   pulling         the pull was signed but never confirmed here  -> landed: return the money; failed or expired: nothing moved
+ *   paying          a payment was sent and the seller failed       -> found onchain: "paid"; can no longer land: return the money
+ *   delivered/paid  the seller answered                            -> found onchain: settled; can no longer land: return the money
+ *   refund_pending  the money must go back                         -> return it
+ *   refunding       a refund was signed but never confirmed here   -> landed: done; failed or expired: try again
+ */
+export async function settleUnresolved(owner?: string): Promise<{ checked: number; refunded: number; foundPaid: number; stillOpen: number }> {
+  const rows = await openPurchases(owner);
+  let refunded = 0, foundPaid = 0, stillOpen = 0;
+  const now = Date.now();
   for (const p of rows) {
-    if (p.unresolved_until && new Date(p.unresolved_until).getTime() > Date.now()) continue;
-    // A row still marked "pulled" means the server stopped before any payment was built: nothing could have been paid.
-    if (p.status === "pulled" && Date.now() - new Date(p.created_at).getTime() < STALE_PULL_MS) continue;
-    // Look for the payment by its random memo among the agent token account's recent transactions.
-    let landed: string | null = null;
-    if (p.status !== "pulled") {
-      // A payment was signed. Without its memo we cannot tell whether it landed, so we never refund on a guess.
-      if (!p.pay_memo) continue;
-      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 500 }, "confirmed")).catch(() => null);
-      if (sigs === null) continue; // could not check: try again later rather than risk a double payment
-      landed = sigs.find((s) => !s.err && s.memo?.includes(p.pay_memo!))?.signature ?? null;
+    const waiting = p.unresolved_until ? new Date(p.unresolved_until).getTime() > now : false;
+    const sinceUpdate = now - new Date(p.updated_at).getTime();
+    try {
+      if (p.status === "pulling") {
+        if (sinceUpdate < 20_000) { stillOpen++; continue; } // a purchase is probably still in progress on another instance
+        const outcome = await signatureOutcome(p.pull_sig!, p.pull_last_valid_height === null ? null : Number(p.pull_last_valid_height));
+        if (outcome === "landed") { await updatePurchase(p.id, { status: "refund_pending" }); if (await refundPurchase(p)) refunded++; else stillOpen++; }
+        else if (outcome === "failed" || outcome === "expired") await updatePurchase(p.id, { status: "failed", settled_at: new Date(), error: "The transfer from the wallet did not go through. Nothing was spent." });
+        else { await touchPurchase(p.id); stillOpen++; }
+      } else if (p.status === "pulled") {
+        await updatePurchase(p.id, { status: "refund_pending" });
+        if (await refundPurchase(p)) refunded++; else stillOpen++;
+      } else if (p.status === "paying" || p.status === "delivered" || p.status === "paid") {
+        if (p.status === "paying" && waiting) { stillOpen++; continue; } // the seller may still be answering
+        const found = await findPaymentOnchain(p);
+        if (found === "unknown") { await touchPurchase(p.id); stillOpen++; continue; }
+        if (found) {
+          await updatePurchase(p.id, { pay_sig: found, settled_at: new Date(), unresolved_until: null, status: p.status === "paying" ? "paid" : p.status,
+            ...(p.status === "paying" ? { error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` } : {}) });
+          foundPaid++;
+          continue;
+        }
+        // No payment onchain yet. Money goes back only when the signed payment can never land any more.
+        const expired = trustWindowOnly() ? true : p.pay_blockhash ? await blockhashExpired(p.pay_blockhash) : null;
+        if (expired === true && !waiting) {
+          await updatePurchase(p.id, { status: "refund_pending", pay_sig: null });
+          if (await refundPurchase(p)) refunded++; else stillOpen++;
+        } else { await touchPurchase(p.id); stillOpen++; }
+      } else if (p.status === "refund_pending") {
+        if (await refundPurchase(p)) refunded++; else stillOpen++;
+      } else if (p.status === "refunding") {
+        if (sinceUpdate < 45_000) { stillOpen++; continue; } // someone is sending it right now
+        if (!p.refund_try_sig) { await updatePurchase(p.id, { status: "refund_pending" }); stillOpen++; continue; }
+        const outcome = await signatureOutcome(p.refund_try_sig, p.refund_try_height === null ? null : Number(p.refund_try_height));
+        if (outcome === "landed") { await updatePurchase(p.id, { status: "refunded", refund_sig: p.refund_try_sig, unresolved_until: null }); refunded++; }
+        else if (outcome === "failed" || outcome === "expired") { await updatePurchase(p.id, { status: "refund_pending", refund_try_sig: null, refund_try_height: null }); stillOpen++; }
+        else { await touchPurchase(p.id); stillOpen++; }
+      }
+    } catch (e) {
+      console.error("settle failed for purchase", p.id, e instanceof Error ? e.message : e);
+      await touchPurchase(p.id).catch(() => {});
+      stillOpen++;
     }
-    if (landed) {
-      await updatePurchase(p.id, { status: "paid", pay_sig: landed, unresolved_until: null, error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` });
-      foundPaid++;
-      continue;
-    }
-    if (await refundPurchase(p.id, new PublicKey(p.owner), BigInt(p.amount_base))) refunded++;
   }
-  return { checked: rows.length, refunded, foundPaid };
+  return { checked: rows.length, refunded, foundPaid, stillOpen };
 }

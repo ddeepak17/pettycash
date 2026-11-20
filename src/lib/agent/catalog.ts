@@ -54,7 +54,7 @@ export const SELLERS: Seller[] = [
     payTo: "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
     lastPriceBase: "1000",
     maxPriceBase: "5000",
-    timeoutMs: 90_000,
+    timeoutMs: 60_000,
     build: (i) => ({ method: "POST", url: "https://minifetch.com/api/v1/x402/extract/url-content", body: JSON.stringify({ url: clip(i.url, 500) }) }),
   },
   {
@@ -148,7 +148,7 @@ export const SELLERS: Seller[] = [
     payTo: "J7aN3PLJnTCF5qpEnvJHJsnCjcGuqC2rYtEM8Gv3xwg",
     lastPriceBase: "30000",
     maxPriceBase: "30000",
-    timeoutMs: 150_000,
+    timeoutMs: 110_000,
     build: (i) => ({ method: "POST", url: "https://agent402.tools/api/image-gen", body: JSON.stringify({ prompt: clip(i.prompt, 900) }) }),
   },
 ];
@@ -164,7 +164,7 @@ export const REASONING_SELLER = {
   payTo: "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
   lastPriceBase: "1000",
   maxPriceBase: "20000",
-  timeoutMs: 120_000,
+  timeoutMs: 60_000,
 };
 
 export const sellerById = (id: string) => SELLERS.find((s) => s.id === id) ?? null;

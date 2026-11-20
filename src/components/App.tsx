@@ -8,7 +8,9 @@ import { explainError } from "@/lib/client/errors";
 import { useConfig, useReceipts, useRun } from "@/lib/client/hooks";
 import { useAppWallet } from "@/lib/client/wallet";
 import { Catalog } from "./Catalog";
-import { CashBox } from "./CashBox";
+import { CashBox, ProofView } from "./CashBox";
+import { Modal } from "./Modal";
+import type { ProofResult } from "@/lib/types";
 import { Enforcement, Feed, Steps } from "./Landing";
 import { ReceiptList } from "./Receipt";
 import { RunTape } from "./RunTape";
@@ -25,6 +27,13 @@ export default function App() {
   const [selectedAddr, setSelectedAddr] = useState<string | null>(null);
   const [signErr, setSignErr] = useState<string | null>(null);
   const [mode, setMode] = useState<"house" | "wallet" | null>(null);
+  const [houseProof, setHouseProof] = useState<{ busy: boolean; result?: ProofResult; error?: string } | null>(null);
+  const testHouse = async () => {
+    if (!config?.house) return;
+    setHouseProof({ busy: true });
+    try { setHouseProof({ busy: false, result: await api.proveOverspend(config.house.delegation, config.house.remainingBase, true) }); }
+    catch (e) { setHouseProof({ busy: false, error: explainError(e) }); }
+  };
   const address = w.status === "connected" ? w.address : null;
 
   const loadState = useCallback(async () => {
@@ -78,6 +87,11 @@ export default function App() {
                     <h2 className="text-xl font-semibold">Try it now, on us</h2>
                     <p className="mt-1 mb-4 text-sm text-muted">No wallet needed. This spends the house petty cash{real ? ", which is real money" : ", which is test money"}: up to {formatUsd(config.house.perRunBudgetBase)} per errand.</p>
                     <TaskBox onRun={runHouse} busy={busy} label="Run on the house petty cash" />
+                    <p className="mt-3 text-xs text-muted">
+                      Errands run here are public: anyone can open the result and its receipts.{" "}
+                      <button type="button" className="underline" onClick={testHouse} disabled={houseProof?.busy}>Try to overspend the house petty cash</button>{" "}
+                      and watch Solana refuse.
+                    </p>
                   </>
                 ) : (
                   <div><h2 className="text-xl font-semibold">The house petty cash is switched off</h2><p className="mt-2 text-sm text-muted">Connect your own wallet to try it with a budget of your own.</p></div>
@@ -125,6 +139,11 @@ export default function App() {
           </div>
         ) : null}
       </main>
+      <Modal open={!!houseProof} onClose={() => setHouseProof(null)} title="Testing the limit">
+        {houseProof?.busy ? <div className="py-4"><Spinner label="Asking Solana to pull more than the house petty cash allows…" /></div> : null}
+        {houseProof?.error ? <ErrorNote>{houseProof.error}</ErrorNote> : null}
+        {houseProof?.result ? <ProofView r={houseProof.result} cluster={cluster} /> : null}
+      </Modal>
       <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-muted sm:px-6">Petty Cash. The limit lives in Solana&apos;s Subscriptions and Allowances program.</footer>
     </>
   );

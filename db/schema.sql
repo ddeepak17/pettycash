@@ -116,3 +116,14 @@ create table if not exists pettycash.artifacts (
   bytes        bytea not null,
   created_at   timestamptz not null default now()
 );
+
+-- Reconciliation: enough is written down BEFORE each transaction is broadcast that an interrupted purchase can be
+-- settled later from chain state alone, and no money is returned twice or left behind.
+alter table pettycash.purchases add column if not exists pull_last_valid_height bigint;   -- after this block height an unconfirmed pull can never land
+alter table pettycash.purchases add column if not exists pay_blockhash text;              -- the payment can only land while this blockhash is valid
+alter table pettycash.purchases add column if not exists settled_at timestamptz;          -- set only once the payment is confirmed onchain by our own check
+alter table pettycash.purchases add column if not exists refund_try_sig text;             -- a refund we signed; checked before any second attempt
+alter table pettycash.purchases add column if not exists refund_try_height bigint;
+alter table pettycash.purchases add column if not exists attempts int not null default 0;
+create unique index if not exists purchases_pay_sig_unique on pettycash.purchases (pay_sig) where pay_sig is not null;
+create index if not exists purchases_open_idx on pettycash.purchases (updated_at) where settled_at is null and refund_sig is null and pull_sig is not null;

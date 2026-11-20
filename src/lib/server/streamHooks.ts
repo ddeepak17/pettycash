@@ -9,7 +9,7 @@ export async function wakeStream(): Promise<void> {
 }
 
 /** Pauses the Stream when no errand has needed it for `minutes`. Safe to call often. */
-export async function restStreamIfIdle(minutes = Number(process.env.STREAM_IDLE_MINUTES ?? 4)): Promise<{ paused: boolean } | null> {
+export async function restStreamIfIdle(minutes = Number(process.env.STREAM_IDLE_MINUTES ?? 2)): Promise<{ paused: boolean } | null> {
   try { const r = await pauseStreamIfIdle(minutes); cached = null; return { paused: r.paused }; } catch (e) { console.error("stream idle check failed:", e instanceof Error ? e.message : e); return null; }
 }
 

@@ -39,7 +39,7 @@ export async function getRun(id: string): Promise<{ run: RunSummary; delegation:
   return { run: toRun(row), delegation: row.delegation as string, events: events.map((e) => e.data as RunEvent) };
 }
 export async function activeRunFor(owner: string): Promise<string | null> {
-  const [row] = await sql()`select id from pettycash.runs where owner = ${owner} and status in ('running', 'awaiting_approval') and created_at > now() - interval '10 minutes' limit 1`;
+  const [row] = await sql()`select id from pettycash.runs where owner = ${owner} and status in ('running', 'awaiting_approval') and created_at > now() - interval '6 minutes' limit 1`;
   return (row?.id as string) ?? null;
 }
 
@@ -49,7 +49,9 @@ export type PurchaseRow = {
   seller_url: string; seller_host: string; seller_name: string | null; method: string; pay_to: string; mint: string; amount_base: string;
   status: string; pull_sig: string | null; pay_sig: string | null; refund_sig: string | null; pay_memo: string | null; http_status: number | null;
   response_sha256: string | null; response_bytes: number | null; response_preview: string | null; error: string | null;
-  unresolved_until: Date | null; created_at: Date; quote: unknown; policy: unknown;
+  unresolved_until: Date | null; created_at: Date; updated_at: Date; quote: unknown; policy: unknown;
+  pull_last_valid_height: string | number | null; pay_blockhash: string | null; settled_at: Date | null;
+  refund_try_sig: string | null; refund_try_height: string | number | null; attempts: number;
 };
 export async function insertPurchase(p: {
   runId: string | null; owner: string; cluster: string; kind: "tool" | "reasoning"; toolId: string | null; step: number; sellerUrl: string; sellerHost: string;
@@ -64,6 +66,7 @@ export async function insertPurchase(p: {
 export async function updatePurchase(id: string, patch: Partial<{
   status: string; pull_sig: string; pay_sig: string | null; refund_sig: string; pay_memo: string | null; http_status: number | null; response_sha256: string | null;
   response_bytes: number; response_preview: string; error: string | null; unresolved_until: Date | null;
+  pull_last_valid_height: number | null; pay_blockhash: string | null; settled_at: Date | null; refund_try_sig: string | null; refund_try_height: number | null;
 }>) {
   const entries = Object.entries(patch).filter(([, v]) => v !== undefined);
   if (!entries.length) return;
@@ -80,10 +83,25 @@ export const purchasesForOwner = async (owner: string, limit: number) =>
   (await sql()`select * from pettycash.purchases where owner = ${owner} and cluster = ${cluster()} and status <> 'denied' order by created_at desc limit ${limit}`) as unknown as PurchaseRow[];
 export const housePurchases = async (limit: number) =>
   (await sql()`select p.* from pettycash.purchases p join pettycash.runs r on r.id = p.run_id where r.is_house and p.cluster = ${cluster()} and p.pull_sig is not null order by p.created_at desc limit ${limit}`) as unknown as PurchaseRow[];
-export const unresolvedPurchases = async (owner?: string) =>
+/** Purchases whose money is not yet accounted for: pulled from an owner but neither confirmed paid onchain nor returned.
+ *  Least recently looked at first, so one stuck row cannot starve the rest. */
+export const openPurchases = async (owner?: string) =>
   (await (owner
-    ? sql()`select * from pettycash.purchases where status in ('refund_pending', 'pulled') and refund_sig is null and cluster = ${cluster()} and owner = ${owner} order by created_at limit 20`
-    : sql()`select * from pettycash.purchases where status in ('refund_pending', 'pulled') and refund_sig is null and cluster = ${cluster()} order by created_at limit 20`)) as unknown as PurchaseRow[];
+    ? sql()`select * from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
+        and status in ('pulling', 'pulled', 'paying', 'delivered', 'paid', 'refund_pending', 'refunding') and cluster = ${cluster()} and owner = ${owner} order by updated_at asc limit 25`
+    : sql()`select * from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
+        and status in ('pulling', 'pulled', 'paying', 'delivered', 'paid', 'refund_pending', 'refunding') and cluster = ${cluster()} order by updated_at asc limit 25`)) as unknown as PurchaseRow[];
+
+/** Marks a row as looked at, so the next pass starts with rows that have waited longer. */
+export async function touchPurchase(id: string) {
+  await sql()`update pettycash.purchases set attempts = attempts + 1, updated_at = now() where id = ${id}`;
+}
+
+/** True when another purchase already records this transaction as its payment. One payment settles one purchase. */
+export async function paySignatureTaken(signature: string, exceptId: string): Promise<boolean> {
+  const rows = await sql()`select 1 from pettycash.purchases where pay_sig = ${signature} and id <> ${exceptId} limit 1`;
+  return rows.length > 0;
+}
 
 /** Per-seller record built from our own purchases: how many were paid and how many were delivered. */
 export async function sellerRecords(): Promise<Record<string, { purchases: number; delivered: number }>> {
@@ -138,10 +156,7 @@ export async function getArtifact(purchaseId: string): Promise<{ contentType: st
 
 /** Takes exclusive ownership of a purchase's refund. Only one caller gets true, so money is never returned twice. */
 export async function claimRefund(id: string): Promise<boolean> {
-  const rows = await sql()`update pettycash.purchases set status = 'refunding', updated_at = now() where id = ${id} and status in ('refund_pending', 'pulled') and refund_sig is null returning id`;
+  const rows = await sql()`update pettycash.purchases set status = 'refunding', refund_try_sig = null, refund_try_height = null, updated_at = now()
+    where id = ${id} and status = 'refund_pending' and refund_sig is null returning id`;
   return rows.length === 1;
-}
-/** Releases stale claims (a process that stopped mid-refund) so they are retried. */
-export async function releaseStaleRefundClaims() {
-  await sql()`update pettycash.purchases set status = 'refund_pending', unresolved_until = now() where status = 'refunding' and refund_sig is null and updated_at < now() - interval '3 minutes'`;
 }

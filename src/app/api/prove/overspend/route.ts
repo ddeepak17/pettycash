@@ -1,8 +1,8 @@
 // "Test the limit": asks the chain to pull one base unit more than a petty cash has left. The Allowances
 // program refuses. With send=true the refusal is recorded onchain as a failed transaction anyone can open.
-import { clientIp, fail, json, parseAddress, sameOrigin } from "@/lib/server/auth";
+import { clientIp, fail, json, parseAddress, sameOrigin, sessionOwner } from "@/lib/server/auth";
 import { proveOverspend, readAllowance } from "@/lib/server/agentWallet";
-import { agentPublicKey } from "@/lib/server/config";
+import { agentPublicKey, house } from "@/lib/server/config";
 import { withinRateLimit } from "@/lib/server/store";
 
 export const runtime = "nodejs";
@@ -22,8 +22,11 @@ export async function POST(req: Request) {
   try {
     const live = await readAllowance(address);
     if (live && !live.view.delegatee.equals(agentPublicKey())) return fail("That petty cash belongs to a different agent.");
+    // Recording the refusal onchain is offered for your own petty cash and for the public demo one, not for a stranger's.
+    const isHouse = house()?.delegation.equals(address) === true;
+    if (send && live && !isHouse && sessionOwner(req) !== live.view.delegator.toBase58()) return fail("Sign in with the wallet that owns this petty cash to record the test onchain.", 401);
     return json(await proveOverspend(address, send));
-  } catch {
-    return fail("Solana could not be reached just now. Try again in a moment.", 503);
+  } catch (e) {
+    return fail(e instanceof Error && e.message.startsWith("The limit test") ? e.message : "Solana could not be reached just now. Try again in a moment.", 503);
   }
 }

@@ -54,7 +54,7 @@ export type PayResult = {
 
 const COMPUTE_BUDGET = "ComputeBudget111111111111111111111111111111";
 const MEMO_PROGRAMS = new Set(["MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr", "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo"]);
-const MAX_BODY_BYTES = 2_000_000;
+const MAX_BODY_BYTES = 6_000_000;
 
 const normalizeOffer = (a: Record<string, unknown>): Offer => ({
   scheme: String(a.scheme ?? ""),
@@ -66,10 +66,23 @@ const normalizeOffer = (a: Record<string, unknown>): Offer => ({
   extra: (a.extra as Record<string, unknown>) ?? undefined,
 });
 
-async function readCapped(res: Response): Promise<{ text: string; bytes: number; sha256: string }> {
-  const buf = Buffer.from(await res.arrayBuffer());
-  const capped = buf.length > MAX_BODY_BYTES ? buf.subarray(0, MAX_BODY_BYTES) : buf;
-  return { text: capped.toString("utf8"), bytes: buf.length, sha256: createHash("sha256").update(buf).digest("hex") };
+/** Reads a response body without ever holding more than the cap in memory. A seller cannot exhaust the server by streaming forever. */
+async function readCapped(res: Response): Promise<{ text: string; bytes: number; sha256: string; truncated: boolean }> {
+  const hash = createHash("sha256");
+  const chunks: Buffer[] = [];
+  let bytes = 0, truncated = false;
+  const reader = res.body?.getReader();
+  if (reader) {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > MAX_BODY_BYTES) { truncated = true; await reader.cancel().catch(() => {}); break; }
+      hash.update(value);
+      chunks.push(Buffer.from(value));
+    }
+  }
+  return { text: Buffer.concat(chunks).toString("utf8"), bytes, sha256: hash.digest("hex"), truncated };
 }
 
 /** Step 1: an unpaid request. A compliant seller answers 402 with its offers. Nothing is signed or paid here. */
@@ -84,7 +97,7 @@ export async function getQuote(request: SellerRequest, want: { network: string; 
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e) {
-    return { kind: "error", status: null, error: `The seller did not answer: ${e instanceof Error ? e.message : "network error"}` };
+    return { kind: "error", status: null, error: `The seller did not answer${e instanceof Error && e.name === "TimeoutError" ? " in time" : ""}.` };
   }
   if (res.status !== 402) {
     const { text } = await readCapped(res);
@@ -98,12 +111,15 @@ export async function getQuote(request: SellerRequest, want: { network: string; 
     const http = new x402HTTPClient(new x402Client());
     parsed = http.getPaymentRequiredResponse((name) => res.headers.get(name), body) as typeof parsed;
   } catch (e) {
-    return { kind: "error", status: 402, error: `The seller's price could not be read: ${e instanceof Error ? e.message : "bad format"}` };
+    return { kind: "error", status: 402, error: "The seller's price could not be read." };
   }
   const accepts = Array.isArray(parsed.accepts) ? (parsed.accepts as Record<string, unknown>[]) : [];
   const offers = accepts.map(normalizeOffer);
   const index = offers.findIndex((o) => o.scheme === "exact" && o.network === want.network && o.asset === want.asset && /^\d+$/.test(o.amount));
   if (index < 0) return { kind: "error", status: 402, error: "The seller does not accept USDC on this Solana network with a fixed price." };
+  // The payment's memo must be ours and random: it is how an unclear payment is found onchain later.
+  if (offers[index].extra && "memo" in offers[index].extra!) return { kind: "error", status: 402, error: "The seller asked for its own note on the payment, which Petty Cash does not allow." };
+  if (typeof offers[index].extra?.feePayer !== "string") return { kind: "error", status: 402, error: "The seller's offer names nobody to pay the network fee, so the payment cannot be built." };
   const resource = (parsed.resource && typeof parsed.resource === "object" ? parsed.resource : {}) as Record<string, unknown>;
   const first = accepts[index];
   return {
@@ -122,11 +138,15 @@ export async function getQuote(request: SellerRequest, want: { network: string; 
   };
 }
 
-/** Decodes a signed payment and throws unless it is exactly the transfer we agreed to. Returns the memo, if any. */
-export function assertPaymentIsExactlyTheQuote(transactionBase64: string, expected: { agent: PublicKey; payTo: PublicKey; mint: PublicKey; amount: bigint }): { memo: string | null } {
-  const tx = VersionedTransaction.deserialize(Buffer.from(transactionBase64, "base64"));
+/** Thrown when a built payment is not exactly the quoted transfer. Its message is safe to show to a person. */
+export class PaymentCheckError extends Error {}
+
+/** Decodes a signed payment and throws unless it is exactly the transfer we agreed to. Returns the memo and the blockhash. */
+export function assertPaymentIsExactlyTheQuote(transactionBase64: string, expected: { agent: PublicKey; payTo: PublicKey; mint: PublicKey; amount: bigint }): { memo: string | null; blockhash: string } {
+  let tx: VersionedTransaction;
+  try { tx = VersionedTransaction.deserialize(Buffer.from(transactionBase64, "base64")); } catch { throw new PaymentCheckError("payment could not be decoded"); }
   const msg = tx.message;
-  if (msg.addressTableLookups.length > 0) throw new Error("payment uses address lookup tables, which we do not accept");
+  if (msg.addressTableLookups.length > 0) throw new PaymentCheckError("payment uses address lookup tables, which we do not accept");
   const keys = msg.staticAccountKeys;
   const source = getAssociatedTokenAddressSync(expected.mint, expected.agent, true);
   const destination = getAssociatedTokenAddressSync(expected.mint, expected.payTo, true);
@@ -136,80 +156,86 @@ export function assertPaymentIsExactlyTheQuote(transactionBase64: string, expect
     const program = keys[ix.programIdIndex].toBase58();
     if (program === COMPUTE_BUDGET) continue;
     if (MEMO_PROGRAMS.has(program)) { memo = Buffer.from(ix.data).toString("utf8"); continue; }
-    if (program !== TOKEN_PROGRAM_ID.toBase58()) throw new Error(`payment contains an instruction for an unexpected program (${program})`);
+    if (program !== TOKEN_PROGRAM_ID.toBase58()) throw new PaymentCheckError(`payment contains an instruction for an unexpected program (${program})`);
     const data = Buffer.from(ix.data);
-    if (data[0] !== 12 || data.length !== 10) throw new Error("payment contains a token instruction that is not TransferChecked");
+    if (data[0] !== 12 || data.length !== 10) throw new PaymentCheckError("payment contains a token instruction that is not TransferChecked");
     const [src, mint, dst, authority] = ix.accountKeyIndexes.map((i) => keys[i]);
-    if (ix.accountKeyIndexes.length !== 4) throw new Error("payment transfer has unexpected extra accounts");
-    if (!src.equals(source)) throw new Error("payment does not come from the agent's own token account");
-    if (!mint.equals(expected.mint)) throw new Error("payment is in a different token than quoted");
-    if (!dst.equals(destination)) throw new Error("payment goes to a different recipient than quoted");
-    if (!authority.equals(expected.agent)) throw new Error("payment is not authorised by the agent key");
-    if (data.readBigUInt64LE(1) !== expected.amount) throw new Error("payment amount differs from the quote");
+    if (ix.accountKeyIndexes.length !== 4) throw new PaymentCheckError("payment transfer has unexpected extra accounts");
+    if (!src.equals(source)) throw new PaymentCheckError("payment does not come from the agent's own token account");
+    if (!mint.equals(expected.mint)) throw new PaymentCheckError("payment is in a different token than quoted");
+    if (!dst.equals(destination)) throw new PaymentCheckError("payment goes to a different recipient than quoted");
+    if (!authority.equals(expected.agent)) throw new PaymentCheckError("payment is not authorised by the agent key");
+    if (data.readBigUInt64LE(1) !== expected.amount) throw new PaymentCheckError("payment amount differs from the quote");
     transfers++;
   }
-  if (transfers !== 1) throw new Error(`payment must contain exactly one transfer, found ${transfers}`);
+  if (transfers !== 1) throw new PaymentCheckError(`payment must contain exactly one transfer, found ${transfers}`);
   // The agent must be an ordinary signer and never the fee payer (the seller's facilitator pays the network fee).
-  if (keys[0].equals(expected.agent)) throw new Error("payment would make the agent pay the network fee");
-  return { memo };
+  if (keys[0].equals(expected.agent)) throw new PaymentCheckError("payment would make the agent pay the network fee");
+  return { memo, blockhash: msg.recentBlockhash };
 }
 
-/** Step 2: sign the quoted transfer, send the request again with the payment attached, and collect the result. */
-export async function payQuote(quote: Quote, agentSecretKey: Uint8Array, opts: { rpcUrl: string; mint: string; timeoutMs?: number; beforeSend?: (memo: string | null) => Promise<void> }): Promise<PayResult> {
-  const started = Date.now();
-  const fail = (error: string, sent = false): PayResult => ({ sent, httpStatus: null, settled: false, signature: null, memo: null, bodyText: "", bodyBytes: 0, sha256: null, contentType: null, error, ms: Date.now() - started });
-  if (quote.x402Version !== 2) return fail("This seller uses an older version of the payment protocol that Petty Cash does not pay.");
+/** A payment that has been built, signed and checked, but not sent. */
+export type BuiltPayment = { headers: Record<string, string>; memo: string; blockhash: string };
 
-  const signer = await createKeyPairSignerFromBytes(agentSecretKey);
-  const net = quote.offer.network as `${string}:${string}`;
-  // A third, independent ceiling inside the SDK itself: this token on this network, never more than the quoted amount.
-  const client = new x402Client()
-    .register(net, new ExactSvmScheme(signer, { rpcUrl: opts.rpcUrl }))
-    .setSpendControls({ allowedAssets: [{ network: net, asset: opts.mint, maxAmountPerPayment: quote.offer.amount }] });
-  const http = new x402HTTPClient(client);
-
-  let headers: Record<string, string>;
-  let memo: string | null = null;
+/** Step 2: build and sign the quoted transfer, and check it. Nothing is sent and no balance is needed, so this runs
+ *  BEFORE any money is pulled: if a payment cannot be built, no money ever moves. */
+export async function buildPayment(quote: Quote, agentSecretKey: Uint8Array, opts: { rpcUrl: string; mint: string }): Promise<{ ok: true; payment: BuiltPayment } | { ok: false; error: string }> {
+  if (quote.x402Version !== 2) return { ok: false, error: "This seller uses an older version of the payment protocol that Petty Cash does not pay." };
   try {
+    const signer = await createKeyPairSignerFromBytes(agentSecretKey);
+    const net = quote.offer.network as `${string}:${string}`;
+    // A third, independent ceiling inside the SDK itself: this token on this network, never more than the quoted amount.
+    const client = new x402Client()
+      .register(net, new ExactSvmScheme(signer, { rpcUrl: opts.rpcUrl }))
+      .setSpendControls({ allowedAssets: [{ network: net, asset: opts.mint, maxAmountPerPayment: quote.offer.amount }] });
+    const http = new x402HTTPClient(client);
     const payload = await http.createPaymentPayload(quote.raw as Parameters<typeof http.createPaymentPayload>[0]);
     const transaction = (payload as { payload?: { transaction?: string } }).payload?.transaction;
-    if (typeof transaction !== "string") return fail("The payment could not be built in the expected form.");
-    ({ memo } = assertPaymentIsExactlyTheQuote(transaction, {
+    if (typeof transaction !== "string") return { ok: false, error: "The payment could not be built in the expected form." };
+    const { memo, blockhash } = assertPaymentIsExactlyTheQuote(transaction, {
       agent: new PublicKey(signer.address),
       payTo: new PublicKey(quote.offer.payTo),
       mint: new PublicKey(opts.mint),
       amount: BigInt(quote.offer.amount),
-    }));
-    headers = http.encodePaymentSignatureHeader(payload);
-    // Let the caller write down how to find this payment onchain before it can possibly land.
-    if (opts.beforeSend) await opts.beforeSend(memo);
+    });
+    if (!memo || memo.length < 16) return { ok: false, error: "The payment has no unique note, so it could not be traced later. It was not sent." };
+    return { ok: true, payment: { headers: http.encodePaymentSignatureHeader(payload), memo, blockhash } };
   } catch (e) {
-    return fail(`Payment was not sent: ${e instanceof Error ? e.message : "could not build it"}`);
+    if (e instanceof PaymentCheckError) return { ok: false, error: `The payment was stopped by our own check: ${e.message}.` };
+    console.error("payment build failed:", e instanceof Error ? e.message : e);
+    return { ok: false, error: "The payment could not be prepared." };
   }
+}
 
+/** Step 3: send the request again with the signed payment attached, and collect the result. */
+export async function sendPayment(quote: Quote, payment: BuiltPayment, timeoutMs = 120_000): Promise<PayResult> {
+  const started = Date.now();
   let res: Response;
   try {
     res = await fetch(quote.request.url, {
       method: quote.request.method,
-      headers: { accept: "application/json", ...(quote.request.body ? { "content-type": "application/json" } : {}), ...quote.request.headers, ...headers },
+      headers: { accept: "application/json", ...(quote.request.body ? { "content-type": "application/json" } : {}), ...quote.request.headers, ...payment.headers },
       body: quote.request.body,
       redirect: "error",
       // Sellers settle before they answer; hanging up early can mean paying without receiving.
-      signal: AbortSignal.timeout(opts.timeoutMs ?? 120_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e) {
-    return { ...fail(`The seller did not answer after the payment was sent: ${e instanceof Error ? e.message : "network error"}`, true), memo };
+    return { sent: true, httpStatus: null, settled: false, signature: null, memo: payment.memo, bodyText: "", bodyBytes: 0, sha256: null, contentType: null,
+      error: `The seller did not answer${e instanceof Error && e.name === "TimeoutError" ? " in time" : ""} after the payment was sent.`, ms: Date.now() - started };
   }
-  const { text, bytes, sha256 } = await readCapped(res);
+  const { text, bytes, sha256, truncated } = await readCapped(res).catch(() => ({ text: "", bytes: 0, sha256: "", truncated: true }));
   let settled = false;
   let signature: string | null = null;
   try {
+    const http = new x402HTTPClient(new x402Client());
     const s = http.getPaymentSettleResponse((name) => res.headers.get(name)) as { success?: boolean; transaction?: string };
     settled = s.success === true;
-    signature = s.transaction ? String(s.transaction) : null;
+    // Only a well-formed signature is kept, and it is still confirmed onchain before it is trusted.
+    signature = typeof s.transaction === "string" && /^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(s.transaction) ? s.transaction : null;
   } catch { /* the seller sent no settlement report */ }
   return {
-    sent: true, httpStatus: res.status, settled, signature, memo, bodyText: text, bodyBytes: bytes, sha256, contentType: res.headers.get("content-type"),
-    error: res.ok ? null : `The seller answered HTTP ${res.status} after the payment was sent.`, ms: Date.now() - started,
+    sent: true, httpStatus: res.status, settled, signature, memo: payment.memo, bodyText: text, bodyBytes: bytes, sha256: sha256 || null, contentType: res.headers.get("content-type"),
+    error: res.ok ? (truncated ? "The seller's answer was larger than we accept." : null) : `The seller answered HTTP ${res.status} after the payment was sent.`, ms: Date.now() - started,
   };
 }

@@ -9,8 +9,7 @@ export const dynamic = "force-dynamic";
 
 const ALLOWED = new Set([
   "getLatestBlockhash", "sendTransaction", "getSignatureStatuses", "getAccountInfo", "getBalance", "getTokenAccountBalance", "simulateTransaction",
-  "getMinimumBalanceForRentExemption", "getBlockHeight", "getSlot", "getFeeForMessage", "getMultipleAccounts", "getRecentPrioritizationFees",
-  "getGenesisHash", "getVersion", "getEpochInfo", "isBlockhashValid", "getTransaction", "getTokenAccountsByOwner",
+  "getMinimumBalanceForRentExemption", "getBlockHeight", "getSlot", "getFeeForMessage", "getGenesisHash", "getVersion", "getEpochInfo", "isBlockhashValid",
 ]);
 type Call = { jsonrpc?: string; id?: unknown; method?: unknown; params?: unknown };
 
@@ -37,7 +36,11 @@ export async function POST(req: Request) {
   const calls = Array.isArray(parsed) ? parsed : [parsed];
   if (calls.length === 0 || calls.length > 10) return fail("Too many calls in one request.");
   for (const c of calls) if (typeof c.method !== "string" || !ALLOWED.has(c.method)) return fail(`Method not allowed: ${String(c.method).slice(0, 40)}`, 403);
-  if (!(await withinRateLimit(`rpc:${clientIp(req)}`, 240, 60).catch(() => true))) return fail("Too many requests. Slow down for a minute.", 429);
+  // Every call in a batch counts. One caller gets 180 calls a minute; everyone together gets 3000.
+  for (let i = 0; i < calls.length; i++) {
+    if (!(await withinRateLimit(`rpc:${clientIp(req)}`, 180, 60).catch(() => false)) || !(await withinRateLimit("rpc:all", 3000, 60).catch(() => false)))
+      return fail("Too many requests. Slow down for a minute.", 429);
+  }
   const res = await forward(text, calls.some((c) => c.method === "sendTransaction"));
   if (!res) return json({ jsonrpc: "2.0", id: Array.isArray(parsed) ? null : (parsed.id ?? null), error: { code: -32000, message: "Solana could not be reached just now." } }, 502);
   return new Response(await res.text(), { status: 200, headers: { "content-type": "application/json", "cache-control": "no-store" } });

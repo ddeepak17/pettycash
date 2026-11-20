@@ -49,7 +49,7 @@ export async function startRun(o: StartRun, requestSignal: AbortSignal): Promise
         const result = await runAgent({
           runId, owner: o.owner, allowance: o.allowance, task: o.task, model, canAsk: !o.isHouse,
           limits: { perPurchaseMax: l.perPurchaseMaxBase, approvalThreshold: o.approvalThreshold, runBudget: o.runBudget, approvalWaitMs: l.approvalWaitMs, maxSteps: l.maxSteps },
-          emit, signal: requestSignal,
+          emit, signal: requestSignal, deadlineAt: started + 170_000,
         });
         await finishRun(runId, { status: result.status, answer: result.answer, spentBase: result.spent });
         await emit({ type: "run_finished", runId, status: result.status, spentBase: result.spent.toString(), purchases: result.purchases, ms: Date.now() - started });
@@ -69,12 +69,11 @@ export async function startRun(o: StartRun, requestSignal: AbortSignal): Promise
   after(async () => {
     await done;
     await settleUnresolved(o.owner.toBase58()).catch(() => {});
-    const idleMs = Number(process.env.STREAM_IDLE_MINUTES ?? 4) * 60_000;
-    const budgetMs = 285_000 - (Date.now() - started);
-    if (budgetMs > idleMs + 5_000) {
-      await new Promise((r) => setTimeout(r, idleMs + 2_000));
-      await restStreamIfIdle().catch(() => {});
-    }
+    // Stay around while the Stream delivers this errand's receipts; settle again once any unclear payment can be decided.
+    const left = () => 285_000 - (Date.now() - started);
+    if (left() > 100_000) { await new Promise((r) => setTimeout(r, 90_000)); await settleUnresolved(o.owner.toBase58()).catch(() => {}); }
+    const idleMs = Number(process.env.STREAM_IDLE_MINUTES ?? 2) * 60_000;
+    if (left() > 5_000) { await new Promise((r) => setTimeout(r, Math.max(0, Math.min(idleMs - 90_000, left() - 5_000)))); await restStreamIfIdle().catch(() => {}); }
   });
 
   return new Response(stream, { headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store, no-transform", "x-accel-buffering": "no", "x-run-id": runId } });
