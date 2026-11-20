@@ -24,6 +24,8 @@ export type Seller = {
   /** How long to wait for the paid response. */
   timeoutMs: number;
   build: (input: Record<string, string>) => SellerRequest;
+  /** Optional: turns the seller's raw answer into a compact form for the model. The person still sees the raw answer. */
+  shape?: (body: string) => string;
 };
 
 const q = (base: string, params: Record<string, string | undefined>) => {
@@ -82,13 +84,22 @@ export const SELLERS: Seller[] = [
     host: "agent-data-tools.revmesh2074.workers.dev",
     kind: "data",
     summary: "Current weather and a 48-hour forecast for any city.",
-    description: "Weather for any city: current conditions and an hourly forecast up to 48 hours ahead (MET Norway data).",
+    description: "Weather for any city: current conditions and an hourly forecast for the next 48 hours, which covers today and tomorrow (MET Norway data). It cannot see further ahead than that.",
     params: [{ name: "city", description: "City name", required: true, example: "Austin" }],
     payTo: "82wfSCZhCmZA7zwqqt6Q3FG8nqYBwUvbThP6M97fa9Q6",
     lastPriceBase: "2000",
     maxPriceBase: "5000",
     timeoutMs: 45_000,
-    build: (i) => ({ method: "GET", url: q("https://agent-data-tools.revmesh2074.workers.dev/weather/forecast", { city: clip(i.city, 80) }) }),
+    build: (i) => ({ method: "GET", url: q("https://agent-data-tools.revmesh2074.workers.dev/weather/forecast", { city: clip(i.city, 80), hours: "48" }) }),
+    // 48 hourly entries are too long to pass on whole. Keep every third hour as one short line.
+    shape: (body) => {
+      try {
+        const d = JSON.parse(body) as { current?: Record<string, unknown>; forecast?: Record<string, unknown>[]; source?: string };
+        const line = (e: Record<string, unknown>) => `${String(e.time).slice(0, 16)}Z ${e.temperatureC}C ${e.conditions} rain ${e.precipitationMm}mm wind ${e.windSpeedMs}m/s`;
+        const rows = (d.forecast ?? []).filter((_, n) => n % 3 === 0).map(line);
+        return `Times are UTC. Now: ${d.current ? line(d.current) : "unknown"}\nForecast, every third hour, 48 hours:\n${rows.join("\n")}\nSource: ${d.source ?? "the seller"}`;
+      } catch { return body.slice(0, 3500); }
+    },
   },
   {
     id: "crypto_news",

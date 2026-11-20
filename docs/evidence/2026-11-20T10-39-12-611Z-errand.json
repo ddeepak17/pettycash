@@ -1,0 +1,388 @@
+{
+  "runId": "1d907bed-dfe8-4363-bc4f-4d9a8db561fa",
+  "task": "What is the weather in Austin today and tomorrow, and do I need a jacket?",
+  "model": "openai/gpt-5.6-luna",
+  "status": "done",
+  "spentBase": "4270",
+  "purchases": 3,
+  "seconds": 20.04,
+  "answer": "**Austin weather (times shown in UTC):**\n\n- **Today, Nov. 20:** About **11–23°C (52–73°F)**. Clear to partly cloudy, dry, and light winds. Cool in the morning, warming through the afternoon.\n- **Tomorrow, Nov. 21:** About **13–21°C (55–70°F)**. Foggy/cloudy at times, dry, with somewhat breezier conditions.\n\n**Jacket?** Yes—bring a **light jacket or sweater** for mornings and evenings. You likely won’t need it during the warmest part of the afternoon.",
+  "receipts": [
+    {
+      "kind": "reasoning",
+      "tool": null,
+      "seller": "BlockRun",
+      "amountBase": "1065",
+      "status": "delivered",
+      "pull": "32G7mnW19DstGEGRd6tYH8PDTYz1nbvRREgKFgz7AeFg4mLC7GJacD7m6CXCui2GobGkboyyBHwK1GZZ2rAh17L8",
+      "pay": "3AfVh6cUg8ym3M8dA2pSPQpVsCppNjE2Ec3LtFfub6h2RYM5Yhz9G9NPdHPwSd3ezomeUCPQUTmWdUcxiJpFWkBr",
+      "pullExplorer": "https://explorer.solana.com/tx/32G7mnW19DstGEGRd6tYH8PDTYz1nbvRREgKFgz7AeFg4mLC7GJacD7m6CXCui2GobGkboyyBHwK1GZZ2rAh17L8",
+      "payExplorer": "https://explorer.solana.com/tx/3AfVh6cUg8ym3M8dA2pSPQpVsCppNjE2Ec3LtFfub6h2RYM5Yhz9G9NPdHPwSd3ezomeUCPQUTmWdUcxiJpFWkBr"
+    },
+    {
+      "kind": "tool",
+      "tool": "weather",
+      "seller": "Agent Data Tools",
+      "amountBase": "2000",
+      "status": "delivered",
+      "pull": "4L3ZforXuQK5JFMWzM8Mfz26E2rvW2nCFRTtggBxQJEgVQaJE7Ss2URgGTWQdmwXvCuSHds51sYP9XVqduPnb8AZ",
+      "pay": "4Dd9t212HaGBAdAektbbFXWvaqWHXr5ZwoZpH3zCES1z9W7QGZ76Pi6chuAAd6NujMbnuiAeX6VmTBM8UMydswkY",
+      "pullExplorer": "https://explorer.solana.com/tx/4L3ZforXuQK5JFMWzM8Mfz26E2rvW2nCFRTtggBxQJEgVQaJE7Ss2URgGTWQdmwXvCuSHds51sYP9XVqduPnb8AZ",
+      "payExplorer": "https://explorer.solana.com/tx/4Dd9t212HaGBAdAektbbFXWvaqWHXr5ZwoZpH3zCES1z9W7QGZ76Pi6chuAAd6NujMbnuiAeX6VmTBM8UMydswkY"
+    },
+    {
+      "kind": "reasoning",
+      "tool": null,
+      "seller": "BlockRun",
+      "amountBase": "1205",
+      "status": "delivered",
+      "pull": "5SitWzS4JA7pV16MSBbdmxYrAvWxUVoDiDURCXQjrURREs6pwuKFQGUbMixDMUw39LRu1TDL2kK3GHHNvpWJvhjh",
+      "pay": "3zFGZSJ9Xg1buMBkC6XPu4w2AZrGo34MnKTkcRy47KZaYJr2TAnS9BkxkQDLfKZQ9xfbP3c9dswt2URPDLg2yeuX",
+      "pullExplorer": "https://explorer.solana.com/tx/5SitWzS4JA7pV16MSBbdmxYrAvWxUVoDiDURCXQjrURREs6pwuKFQGUbMixDMUw39LRu1TDL2kK3GHHNvpWJvhjh",
+      "payExplorer": "https://explorer.solana.com/tx/3zFGZSJ9Xg1buMBkC6XPu4w2AZrGo34MnKTkcRy47KZaYJr2TAnS9BkxkQDLfKZQ9xfbP3c9dswt2URPDLg2yeuX"
+    }
+  ],
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "7b64dea5-437c-48de-bc99-bb1f8cbb7f79",
+      "step": 1,
+      "kind": "reasoning",
+      "seller": {
+        "id": null,
+        "name": "BlockRun",
+        "host": "sol.blockrun.ai",
+        "url": "https://sol.blockrun.ai/api/v1/chat/completions"
+      },
+      "amountBase": "1065",
+      "payTo": "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
+      "description": "GPT-5.6 Luna API call (~2067 input, 500 max output tokens)"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "7b64dea5-437c-48de-bc99-bb1f8cbb7f79",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "BlockRun is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001065."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001065 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001065 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.001065 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.293583 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001065 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "7b64dea5-437c-48de-bc99-bb1f8cbb7f79",
+      "signature": "32G7mnW19DstGEGRd6tYH8PDTYz1nbvRREgKFgz7AeFg4mLC7GJacD7m6CXCui2GobGkboyyBHwK1GZZ2rAh17L8",
+      "amountBase": "1065",
+      "remainingBase": "292518",
+      "ms": 1180
+    },
+    {
+      "type": "paid",
+      "purchaseId": "7b64dea5-437c-48de-bc99-bb1f8cbb7f79",
+      "signature": "3AfVh6cUg8ym3M8dA2pSPQpVsCppNjE2Ec3LtFfub6h2RYM5Yhz9G9NPdHPwSd3ezomeUCPQUTmWdUcxiJpFWkBr",
+      "httpStatus": 200,
+      "ms": 2468
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "7b64dea5-437c-48de-bc99-bb1f8cbb7f79",
+      "bytes": 740,
+      "sha256": "29bb096f2f5f2cd882dc322b1f026c90d30658dd2bdde05e741e0119e810b9c1",
+      "preview": "{\"id\":\"chatcmpl-EmGJ61NRojcL5TXThlGNTLFww5aKW\",\"object\":\"chat.completion\",\"created\":1795171136,\"model\":\"gpt-5.6-luna\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"say\\\":\\\"I’m checking Austin’s current conditions and the next 48 hours to recommend whether you need a jacket.\\\",\\\"action\\\":\\\"buy\\\",\\\"tool\\\":\\\"weather\\\",\\\"input\\\":{\\\"city\\\":\\\"Austin\\\"}}\",\"refusal\":null,\"annotations\":[]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"usage\":{\"prompt_tokens\":1046,\"completion_tokens\":54,\"total_tokens\":1100,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":1043,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":7,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}}}"
+    },
+    {
+      "type": "thinking",
+      "step": 1,
+      "text": "I’m checking Austin’s current conditions and the next 48 hours to recommend whether you need a jacket."
+    },
+    {
+      "type": "quote",
+      "purchaseId": "41bffc09-03f7-4c00-8d38-297e059b46e5",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "weather",
+        "name": "Agent Data Tools",
+        "host": "agent-data-tools.revmesh2074.workers.dev",
+        "url": "https://agent-data-tools.revmesh2074.workers.dev/weather/forecast"
+      },
+      "amountBase": "2000",
+      "payTo": "82wfSCZhCmZA7zwqqt6Q3FG8nqYBwUvbThP6M97fa9Q6",
+      "description": "Weather forecast by city name or coordinates: current temperature, conditions, precipitation, wind, humidity, cloud cover and pressure, plus an hourly forecast up to 48 hours ahead, for any city on Earth (MET Norway data). Give a city such as London or Tokyo, or lat and lon. Use when an agent needs today's weather or tomorrow's forecast for travel, events, logistics or a daily brief."
+    },
+    {
+      "type": "policy",
+      "purchaseId": "41bffc09-03f7-4c00-8d38-297e059b46e5",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Agent Data Tools is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.002."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.002 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.002 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.003065 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.292518 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.002 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "41bffc09-03f7-4c00-8d38-297e059b46e5",
+      "signature": "4L3ZforXuQK5JFMWzM8Mfz26E2rvW2nCFRTtggBxQJEgVQaJE7Ss2URgGTWQdmwXvCuSHds51sYP9XVqduPnb8AZ",
+      "amountBase": "2000",
+      "remainingBase": "290518",
+      "ms": 1349
+    },
+    {
+      "type": "paid",
+      "purchaseId": "41bffc09-03f7-4c00-8d38-297e059b46e5",
+      "signature": "4Dd9t212HaGBAdAektbbFXWvaqWHXr5ZwoZpH3zCES1z9W7QGZ76Pi6chuAAd6NujMbnuiAeX6VmTBM8UMydswkY",
+      "httpStatus": 200,
+      "ms": 2100
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "41bffc09-03f7-4c00-8d38-297e059b46e5",
+      "bytes": 10448,
+      "sha256": "9ee1fdc2bc3a25e327f477f9d52e843f00890e00ea995ede2d2f4fe191d9a7d0",
+      "preview": "{\"place\":\"Austin\",\"latitude\":30.2672,\"longitude\":-97.7431,\"elevationM\":146,\"current\":{\"time\":\"2026-11-20T10:00:00Z\",\"temperatureC\":12.2,\"conditions\":\"clearsky_night\",\"precipitationMm\":0,\"windSpeedMs\":0.7,\"windFromDegrees\":317.8,\"humidityPercent\":93.8,\"cloudCoverPercent\":0,\"pressureHpa\":1020.8},\"forecast\":[{\"time\":\"2026-11-20T11:00:00Z\",\"temperatureC\":11.4,\"conditions\":\"clearsky_night\",\"precipitationMm\":0,\"windSpeedMs\":1.1,\"windFromDegrees\":327.8,\"humidityPercent\":96.7,\"cloudCoverPercent\":2.3,\"pressureHpa\":1020.8},{\"time\":\"2026-11-20T12:00:00Z\",\"temperatureC\":11.1,\"conditions\":\"clearsky_night\",\"precipitationMm\":0,\"windSpeedMs\":1.4,\"windFromDegrees\":327.5,\"humidityPercent\":97.1,\"cloudCoverPercent\":4.7,\"pressureHpa\":1021},{\"time\":\"2026-11-20T13:00:00Z\",\"temperatureC\":10.9,\"conditions\":\"clearsky_day\",\"precipitationMm\":0,\"windSpeedMs\":1.4,\"windFromDegrees\":322.1,\"humidityPercent\":96.4,\"cloudCoverPercent\":12.5,\"pressureHpa\":1021.3},{\"time\":\"2026-11-20T14:00:00Z\",\"temperatureC\":12.5,\"conditions\":\"fair_day\",\"precipitationMm\":0,\"windSpeedMs\":1.7,\"windFromDegrees\":335.6,\"humidityPercent\":94,\"cloudCoverPercent\":18,\"pressureHpa\":1021.6},{\"time\":\"2026-11-20T15:00:00Z\",\"temperatureC\":15.7,\"condi…"
+    },
+    {
+      "type": "quote",
+      "purchaseId": "a2e08904-d133-4909-9926-150975a17245",
+      "step": 2,
+      "kind": "reasoning",
+      "seller": {
+        "id": null,
+        "name": "BlockRun",
+        "host": "sol.blockrun.ai",
+        "url": "https://sol.blockrun.ai/api/v1/chat/completions"
+      },
+      "amountBase": "1205",
+      "payTo": "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
+      "description": "GPT-5.6 Luna API call (~2734 input, 500 max output tokens)"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "a2e08904-d133-4909-9926-150975a17245",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "BlockRun is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001205."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001205 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001205 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.00427 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.290518 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001205 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "a2e08904-d133-4909-9926-150975a17245",
+      "signature": "5SitWzS4JA7pV16MSBbdmxYrAvWxUVoDiDURCXQjrURREs6pwuKFQGUbMixDMUw39LRu1TDL2kK3GHHNvpWJvhjh",
+      "amountBase": "1205",
+      "remainingBase": "289313",
+      "ms": 1687
+    },
+    {
+      "type": "paid",
+      "purchaseId": "a2e08904-d133-4909-9926-150975a17245",
+      "signature": "3zFGZSJ9Xg1buMBkC6XPu4w2AZrGo34MnKTkcRy47KZaYJr2TAnS9BkxkQDLfKZQ9xfbP3c9dswt2URPDLg2yeuX",
+      "httpStatus": 200,
+      "ms": 3755
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "a2e08904-d133-4909-9926-150975a17245",
+      "bytes": 1217,
+      "sha256": "be4cad12f7bb3739335fe7b8c04410fe130e65c8ca24892e10832cefb2306101",
+      "preview": "{\"id\":\"chatcmpl-EmGJIDCDngFVDvp4FQGJ4nMN97Wfm\",\"object\":\"chat.completion\",\"created\":1795171148,\"model\":\"gpt-5.6-luna\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"say\\\":\\\"Austin is mild today and tomorrow, with cooler mornings and warmer afternoons; a light jacket is advisable, especially early and late.\\\",\\\"action\\\":\\\"answer\\\",\\\"answer\\\":\\\"**Austin weather (times shown in UTC):**\\\\n\\\\n- **Today, Nov. 20:** About **11–23°C (52–73°F)**. Clear to partly cloudy, dry, and light winds. Cool in the morning, warming through the afternoon.\\\\n- **Tomorrow, Nov. 21:** About **13–21°C (55–70°F)**. Foggy/cloudy at times, dry, with somewhat breezier conditions.\\\\n\\\\n**Jacket?** Yes—bring a **light jacket or sweater** for mornings and evenings. You likely won’t need it during the warmest part of the afternoon.\\\"}\",\"refusal\":null,\"annotations\":[]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"usage\":{\"prompt_tokens\":1676,\"completion_tokens\":169,\"total_tokens\":1845,\"prompt_tokens_details\":{\"cached_tokens\":1043,\"cache_write_tokens\":630,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":0,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}}…"
+    },
+    {
+      "type": "thinking",
+      "step": 2,
+      "text": "Austin is mild today and tomorrow, with cooler mornings and warmer afternoons; a light jacket is advisable, especially early and late."
+    },
+    {
+      "type": "answer",
+      "text": "**Austin weather (times shown in UTC):**\n\n- **Today, Nov. 20:** About **11–23°C (52–73°F)**. Clear to partly cloudy, dry, and light winds. Cool in the morning, warming through the afternoon.\n- **Tomorrow, Nov. 21:** About **13–21°C (55–70°F)**. Foggy/cloudy at times, dry, with somewhat breezier conditions.\n\n**Jacket?** Yes—bring a **light jacket or sweater** for mornings and evenings. You likely won’t need it during the warmest part of the afternoon."
+    }
+  ]
+}
