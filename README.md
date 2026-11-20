@@ -274,7 +274,7 @@ pnpm test        # unit tests and Stream pipeline tests, no network needed
 pnpm quotes      # asks every catalog seller for its price on mainnet; unpaid, nothing is signed
 ```
 
-`pnpm test` runs 140 tests without a database. Seven more, for the storage of Stream deliveries, run only when `DATABASE_URL` is set.
+`pnpm test` runs 148 tests. Seven of them, for the storage of Stream deliveries, need `DATABASE_URL` and are skipped without it.
 
 Local chain checks. Terminal 1 starts a validator that loads the mainnet build of the Allowances program:
 
@@ -342,6 +342,10 @@ db/schema.sql                  data model
 scripts/                       local chain checks, rehearsal, seller quotes, database setup, Stream control, mainnet operations
 tests/unit/, tests/stream/     automated tests
 tests/local/seller.ts          the local x402 seller used by the rehearsal (a test double)
+tests/e2e/                     real-browser journeys against the deployed app, a test wallet, and the screen recorder
+scripts/mainnet.ts             mainnet operations: set aside, buy, run an errand, test the limit, revoke, settle
+scripts/stream-backfill.ts     re-delivers a past block range so receipts made while the Stream was paused can be verified
+scripts/video/                 assembles real screen recordings into a captioned video
 .github/workflows/             continuous integration, and the timer that calls the housekeeping endpoint
 docs/                          architecture, threat model, evidence, submission text, video script
 ```
