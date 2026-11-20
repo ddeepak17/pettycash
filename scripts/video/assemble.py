@@ -31,11 +31,22 @@ def main():
     segs, renders = [], []
     for i, seg in enumerate(plan["segments"]):
         aiff, wav = f"{tmp}/{i}.aiff", f"{tmp}/{i}.wav"
-        run(["say", "-v", plan.get("voice", "Samantha"), "-r", str(plan.get("rate", 168)), "-o", aiff, seg["say"]])
-        run(["ffmpeg", "-y", "-i", aiff, "-ar", "48000", "-ac", "2", wav])
-        speech = duration(wav)
-        length = max(speech + seg.get("pad", 0.9), seg.get("min", 0))
-        info = {"i": i, "seg": seg, "wav": wav, "speech": speech, "length": length, "speed": 1.0}
+        lead = 0.0
+        if seg.get("audio"):
+            # A person's own recording of this line. The footage is fitted to it; the voice is never stretched.
+            run(["ffmpeg", "-y", "-i", seg["audio"], "-ar", "48000", "-ac", "2", wav])
+            speech = duration(wav); lead = float(plan.get("lead", 0.3))
+            length = max(lead + speech + seg.get("pad", plan.get("pad", 0.6)), seg.get("min", 0))
+        elif plan.get("silent"):
+            # No narration at all: each segment simply lasts as long as the plan says.
+            length = float(seg["length"]); speech = 0.0
+            run(["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-t", f"{length:.2f}", wav])
+        else:
+            run(["say", "-v", plan.get("voice", "Samantha"), "-r", str(plan.get("rate", 168)), "-o", aiff, seg["say"]])
+            run(["ffmpeg", "-y", "-i", aiff, "-ar", "48000", "-ac", "2", wav])
+            speech = duration(wav)
+            length = max(speech + seg.get("pad", 0.9), seg.get("min", 0))
+        info = {"i": i, "seg": seg, "wav": wav, "speech": speech, "length": length, "speed": 1.0, "lead": lead}
         if seg.get("clip"):
             start = float(seg.get("start", 0)); use = float(seg.get("use", duration(seg["clip"]) - start))
             info.update(start=start, use=use, speed=max(1.0, use / length))
@@ -67,10 +78,16 @@ def main():
         filters.append(f"{last}format=yuv420p[v]")
         part = f"{tmp}/{i}.mp4"
         run(["ffmpeg", "-y", *inputs, "-i", s["wav"], "-filter_complex", ";".join(filters), "-map", "[v]", "-map", f"{n}:a", "-t", f"{length:.2f}",
-             "-af", f"apad=whole_dur={length:.2f}", "-r", str(FPS), "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", part])
+             "-af", (f"adelay={int(s['lead'] * 1000)}|{int(s['lead'] * 1000)}," if s["lead"] else "") + f"apad=whole_dur={length:.2f}", "-r", str(FPS), "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-ar", "48000", part])
         parts.append(part)
         what = "card" if "card" in s else f"clip {os.path.basename(s['seg']['clip'])[:28]} speed {s['speed']:.2f}x"
         print(f"segment {i}: {length:5.1f}s  speech {s['speech']:5.1f}s  {what}")
+    t, timeline = 0.0, []
+    for s in segs:
+        timeline.append({"line": s["i"] + 1, "start": round(t, 2), "end": round(t + s["length"], 2), "speech": round(s["speech"], 2), "speed": round(s["speed"], 2),
+                         "what": s["seg"].get("card") or os.path.basename(s["seg"].get("clip", ""))})
+        t += s["length"]
+    json.dump(timeline, open(out + ".timeline.json", "w"), indent=1)
     lst = f"{tmp}/list.txt"
     open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
     run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", "-movflags", "+faststart", out])
