@@ -54,6 +54,24 @@ This file says who can do what, what stops them, and what is left over. It is wr
 
 Petty Cash's own code has automated tests (see [EVIDENCE.md](EVIDENCE.md), items 1 to 3) and AI-assisted review. It has not had a professional security audit. Treat it as a hackathon build and use small amounts.
 
+## What an independent review found
+
+On 2026-11-20 the money paths had an automated, AI-assisted adversarial review. It is not a professional audit. It found no way to spend from an allowance one does not own, and it confirmed the pre-send payment check and the defences against instructions hidden in tool results. It did find gaps in how unclear payments were settled: the same refund could be sent twice, a seller's own settlement claim was trusted, money was pulled before the payment was known to be buildable, and a payment could be pushed out of the range we searched. All of these were fixed, and each has a case in `scripts/rehearse-local.ts`.
+
+The rehearsal itself then caught two more mistakes in the fixes, which are worth knowing about:
+
+- A brand-new blockhash is reported as "not valid" at finalized commitment, exactly like an expired one. Asking that question would have returned money while a payment could still land. The rule is now a block height: money returns only when a finalized block is past the last height at which the payment could land.
+- Two transactions with the same instructions and the same recent blockhash are byte-identical and share one signature, so the chain runs them once. Two refunds of the same amount to the same wallet collapsed into one while both were recorded. Every pull and refund now carries a unique note, and the database refuses to record one signature for two purchases.
+
+| Threat | What stops it now | Where |
+|---|---|---|
+| A seller answers HTTP 200, or claims a settlement, without being paid | The purchase stays open until our own read of the chain finds the exact payment. If it can never land, the money returns to the owner | `settleUnresolved` in `src/lib/agent/purchase.ts` |
+| The server stops in the middle of a purchase | Each signature and the payment's memo are written down before broadcast, so the reconciler settles the purchase from chain state alone | `onSigned` in `src/lib/server/rpc.ts` |
+| Two reconcilers work on the same purchase | Every state change is compare-and-set, and a refund needs an exclusive claim | `moveStatus`, `claimRefund` in `src/lib/server/store.ts` |
+| An RPC node has pruned the history | The search must reach the pull itself. If it does not, nothing is refunded automatically | `findPaymentOnchain` |
+| A seller dictates the payment's memo | Refused at the quote. The memo is ours and random, because it is how a payment is found later | `getQuote` in `src/lib/x402/client.ts` |
+| Another site relays our sign-in message to your wallet | The message names this site and is rejected if it was issued for another host | `src/lib/server/auth.ts` |
+
 ## If something goes wrong
 
 - **Stop the agent now**: press Revoke, or send the program's revoke instruction for your allowance account from any client. The account closes and no further pull can succeed.
