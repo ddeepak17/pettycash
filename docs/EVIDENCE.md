@@ -1,6 +1,6 @@
 # Evidence
 
-Every claim in the README is listed here with what was run, when, and how to repeat it. Items that are not done yet say "Pending" and carry a placeholder. No number in this file is an estimate.
+Every claim in the README is listed here with what was run, when, and how to repeat it. Items 7 to 12 are real transactions on Solana mainnet from 2026-11-20. (Earlier drafts said "Pending" and carried a placeholder. No number in this file is an estimate.
 
 Counts of checks and tests are for the code at commit `2f53480` on 2026-11-20. The tests were run at commit `e10fa51`; the commits between the two change only the interface.
 
@@ -12,11 +12,12 @@ Counts of checks and tests are for the code at commit `2f53480` on 2026-11-20. T
 | 4 | Every catalog seller is live on Solana mainnet | Done, 10 of 10 |
 | 5 | The Stream filter reports what the chain recorded | Done, on real mainnet blocks in QuickNode's sandbox |
 | 6 | The Allowances program is in real use | Done, counted on mainnet |
-| 7 | A real paid purchase on Solana mainnet | Pending |
-| 8 | A live Stream delivery verifies that purchase | Pending |
-| 9 | Solana refuses an over-limit pull on mainnet | Pending |
-| 10 | Revoke on mainnet | Pending |
-| 11 | Deployed public demo | Pending |
+| 7 | A real paid purchase on Solana mainnet | Done 2026-11-20 |
+| 8 | A live Stream delivery verifies that purchase | Done 2026-11-20 |
+| 9 | Solana refuses an over-limit pull on mainnet | Done 2026-11-20 |
+| 10 | Revoke on mainnet | Done 2026-11-20 |
+| 11 | Deployed public demo | Live |
+| 12 | Money returned after a real seller failed | Done 2026-11-20 |
 
 ## 1. Instruction builders against the mainnet build: 11 of 11
 
@@ -200,42 +201,53 @@ The numbers change as people create and close allowances.
 
 <!-- EVIDENCE:mainnet-purchase -->
 
-Pending: one real purchase with real USDC. The proof will be two transaction signatures, the pull (owner to agent, through the Allowances program) and the payment (agent to seller, fee paid by the seller's facilitator), plus the seller, the price and the hash of the response.
+Done 2026-11-20 at 09:56 UTC. The agent bought one web search from Minifetch for $0.001.
 
-How it will be produced: `pnpm tsx scripts/mainnet.ts buy <allowance> <tool> '<json input>'` for one purchase, or `errand <allowance> "<task>"` for a whole errand. Each command writes a JSON record to `docs/evidence/`.
+- Pull, owner to agent, through the Allowances program: [`4M4XjWAA…`](https://explorer.solana.com/tx/4M4XjWAAAN2NvoVi7HkvJ2FtER43HhfZa3CygtiFkc1KPyk3qc89coRyrE4oeptUqikKGuWSaQCiUTxdsZWFGqJH)
+- Payment, agent to the seller's wallet `46vMcwuC…`, submitted by the seller's facilitator: [`61S8LZo5…`](https://explorer.solana.com/tx/61S8LZo5z1mbYfU3SNNTWJVSpNb7wByZFwuzRgnWLJnpKnRJnoQ2mi1BhJeW9Xbk1NVCDFzrdvkfWttR9dLpRQ1x)
+- The seller answered HTTP 200 with 4,215 bytes of search results. The owner's USDC balance went from 1.000227 to 0.999227 and the agent held nothing afterwards.
+
+Recorded output: `docs/evidence/2026-11-20T09-56-47-284Z-buy-web_search.json`. The first full errand (three purchases, $0.012631, 21 seconds) is in `docs/evidence/2026-11-20T09-57-46-436Z-errand.json`. The other files named `*buy-*.json` and `*errand.json` are the first paid call to each catalog seller and later errands.
+
+To repeat it with your own funded wallet: `pnpm tsx scripts/mainnet.ts fixed 0.15 24`, then `pnpm tsx scripts/mainnet.ts buy <allowance> web_search '{"query":"..."}'`. This spends real USDC.
 
 ## 8. A live Stream delivery
 
 <!-- EVIDENCE:stream-delivery -->
 
-Pending: the Stream's id and summary as QuickNode reports them (`pnpm stream get`), and the delivery that matched both transactions of the purchase in item 7, so that its receipt says verified.
+Done 2026-11-20. Stream `3a8caced-b74c-4171-a26c-dcd8a462d482` (`pnpm stream get` prints its summary).
 
-Why it is still pending: QuickNode only creates a stream for a webhook address that resolves, so the Stream can be created only after the app is deployed.
+- Before any purchase of ours: with the filter pointed at a busy x402 facilitator's key for two minutes, three real payments by other buyers reached `/api/quicknode` 0.8 to 1.9 seconds after their block. See `docs/evidence/2026-11-20-stream-live-delivery-test.jsonl`. To repeat: `AGENT_PUBLIC_KEY=<a busy key> pnpm tsx scripts/stream.ts set-filter`, `pnpm tsx scripts/stream.ts activate`, watch `GET /api/quicknode`, then `pause` and `set-filter` again without the variable.
+- For the purchase in item 7: the Stream delivered the pull (slot 471694935) 1.39 seconds after its block and the payment (slot 471694945) 1.63 seconds after its block. Its token movements were exactly: owner -1000, agent +1000; agent -1000, seller +1000.
+- By 10:55 UTC: 48 real receipts, 46 verified, 2 refunded, 0 mismatched. The live list is `GET /api/receipts?owner=DhrxJqnfTEpgvak87D25SSkwacfpbv3p4gWi94JCqNPb` on the deployed app.
+- Five of those receipts were made from the command line while the Stream was paused. They were verified afterwards by re-delivering that block range: `pnpm tsx scripts/stream-backfill.ts`.
 
 ## 9. An over-limit pull refused on mainnet
 
 <!-- EVIDENCE:overlimit-refusal -->
 
-Pending: the signature of a failed mainnet transaction in which the Allowances program refuses a pull of one base unit more than the petty cash has left, with program error 300.
+Done 2026-11-20. With $0.136369 left in the petty cash, the agent's key asked for $0.136370. The transaction failed inside the Allowances program with custom program error `0x12c` (300, `amountExceedsLimit`): [`4kYmEos8…`](https://explorer.solana.com/tx/4kYmEos8AgBdTH4sj3Rem2Zo7mGvvQuR6QvSRLKSGNvxTsLkEtm63wfTH5dKwnNmgZnPDMSZJP9bKPscjgFrEzZs). Recorded output: `docs/evidence/*overlimit-onchain.json`.
 
-How it will be produced: the "Test the limit" button, or `pnpm tsx scripts/mainnet.ts prove <allowance> send`. The same refusal is already shown on the local chain in item 2, check G.
+Anyone can repeat it on the live app with no wallet: the landing page link "Try to overspend the house petty cash" sends a fresh attempt and links the failed transaction.
 
 ## 10. Revoke on mainnet
 
 <!-- EVIDENCE:revoke -->
 
-Pending: the signature of the owner's revoke transaction, and the allowance account shown as closed afterwards.
-
-How it will be produced: the "Revoke" button, or `pnpm tsx scripts/mainnet.ts revoke <allowance>`. The same behaviour is already shown on the local chain in item 1 and in item 2, check J.
+Done 2026-11-20. The owner revoked the allowance [`BTrYj7cgcHmn5rkTb538afiYNDDsVCHwUV4joYaPwfjc`](https://explorer.solana.com/address/BTrYj7cgcHmn5rkTb538afiYNDDsVCHwUV4joYaPwfjc): [`2vEnigsU…`](https://explorer.solana.com/tx/2vEnigsU6QfYvXFax7Mp18Csnkwb9jgfxdsZVMrrghABkuAJvseKhvLUw1wrd6uqGK1GfcGHHyn39Hr4Q29YroUQ). The account no longer exists, and the limit test afterwards reported that nothing can be pulled. Recorded output: `docs/evidence/*revoke.json`. The same flow was also run through the interface in a real browser with a test wallet (`tests/e2e/journey.ts wallet`).
 
 ## 11. The deployed demo
 
 <!-- EVIDENCE:deployed-url -->
 
-Pending: the public URL, the agent's public key and the address of the house petty cash. The deployed app reports the last two itself at `/api/config`, as `agent` and `house.delegation`.
+Live at https://pettycash-pink.vercel.app on Solana mainnet. The agent's key is [`5SAtLdgB7VnhbTBJGjKs4HkYKNjPC4Dnhx6FLVu4Jtz9`](https://explorer.solana.com/address/5SAtLdgB7VnhbTBJGjKs4HkYKNjPC4Dnhx6FLVu4Jtz9). The house petty cash is [`4wKoPjtzmWCKLztKxG7vR56yyGG1pqS7NGCPjahfXYVH`](https://explorer.solana.com/address/4wKoPjtzmWCKLztKxG7vR56yyGG1pqS7NGCPjahfXYVH), a recurring allowance of $0.30 per day until 2026-11-23, owned by [`DhrxJqnfTEpgvak87D25SSkwacfpbv3p4gWi94JCqNPb`](https://explorer.solana.com/address/DhrxJqnfTEpgvak87D25SSkwacfpbv3p4gWi94JCqNPb). The deployed app reports these itself at `/api/config`. A public errand, with its receipts: https://pettycash-pink.vercel.app/r/0a3e0a33-0665-4679-9603-00dca143b14d
+
+## 12. Money returned after a real seller failed
+
+Done 2026-11-20, unplanned. A page-reading purchase was answered with HTTP 502 after the payment had been sent. The purchase stayed open. Our read of the chain found no payment carrying its note, a finalized block passed the last height at which the payment could land, and the $0.001 went back to the owner: pull [`4eZQcLnQ…`](https://explorer.solana.com/tx/4eZQcLnQfb9wBeVUKkorjZnnteZGENqV63Pwx3De56GjyrVrprpXD3GaUQCtXu4CbMR3iBV7rLS7TLawfZxRrZw), refund [`4VJZgzY8…`](https://explorer.solana.com/tx/4VJZgzY8EXEsCx34KB44qRBQZ2pVY3UYHBSgJDdRubng2AbFVc7eyeYv3E1T9pQqSySiVx34f7yK7g35XQSMwfMT). The same happened once more later the same hour.
 
 ## What this evidence does not show
 
-- That a real model stays inside the limits. The rehearsal uses a scripted model. The limits do not depend on the model: they are code and chain state.
-- That every seller delivers good results. Item 4 shows that each one quotes a price. Delivery is shown only once items 7 and 8 are filled in.
+- That a real model always behaves well. The rehearsal uses a scripted model; on mainnet, real models ran real errands (items 7 and 8) and one was pointed at a page of hostile instructions, which it summarised as data. The limits do not depend on the model: they are code and chain state.
+- That every seller delivers good results every time. Each catalog seller has delivered at least once when paid, and two purchases were answered with an error and refunded. We record the size and hash of what came back; we do not judge its quality.
 - That our server code is free of security bugs. It has automated tests and AI-assisted review. It has not had a professional audit.
