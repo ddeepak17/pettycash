@@ -234,9 +234,13 @@ The idea of an onchain allowance for an agent is not ours.
 - A public tutorial shows it: Chainstack's [Capped onchain budgets for AI agents](https://docs.chainstack.com/docs/solana-agent-allowances-x402), on devnet.
 - An earlier project, BudgetRail (August 2026, [github.com/vignesh-chaturvedi/BudgetRail](https://github.com/vignesh-chaturvedi/BudgetRail)), built capped agent allowances for x402 on the same program, paying its own test merchant through a facilitator it runs itself.
 
-What we add, as far as we could find:
+- A recent hackathon project, Agent Vault (November 2026, [github.com/yosef7/agent-vault-solana](https://github.com/yosef7/agent-vault-solana)), puts a spending cap and receipt accounts in its own program on devnet with a test token.
 
-- **It works against real third-party x402 sellers on mainnet, through their stock facilitators.** We pull just in time into the agent's account and pay with a standard transfer, so no seller has to change anything.
+We searched for products, hackathon projects and public code on 2026-11-20 and may still have missed something. We also found no x402 payment scheme that pays a seller straight from a wallet's allowance, which is why we pull just in time.
+
+What we add, as far as we could find, is the combination: Solana mainnet, real third-party sellers, the limit in Solana's own allowance program, and receipts verified from a Stream.
+
+- **It works against real third-party x402 sellers on mainnet, through their stock facilitators.** We pull just in time into the agent's account and pay with a standard transfer, so no seller has to change anything. Rows 7 to 12 of the evidence table are real transactions.
 - **Receipts are verified from an independent data source**, a QuickNode Stream, and not from the agent's word.
 - **The agent needs no API keys.** It pays per request, including for its own reasoning.
 - **A public demo anyone can run** without a wallet.

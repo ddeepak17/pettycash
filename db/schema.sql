@@ -131,3 +131,4 @@ alter table pettycash.purchases add column if not exists pay_last_valid_height b
 -- One transaction can belong to one purchase only. These make a shared signature impossible to record twice.
 create unique index if not exists purchases_pull_sig_unique on pettycash.purchases (pull_sig) where pull_sig is not null;
 create unique index if not exists purchases_refund_sig_unique on pettycash.purchases (refund_sig) where refund_sig is not null;
+alter table pettycash.purchases add column if not exists refund_claim text;                -- who holds the refund; only that holder may record and broadcast it

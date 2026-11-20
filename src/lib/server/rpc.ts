@@ -83,8 +83,9 @@ export async function signatureOutcome(signature: string, lastValidBlockHeight: 
   try {
     const status = (await read((c) => c.getSignatureStatuses([signature], { searchTransactionHistory: true }))).value[0];
     if (status) {
-      if (status.err) return "failed";
-      return status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized" ? "landed" : "unknown";
+      // A status seen only at "processed" can belong to a fork that is later dropped. Believe it once it is confirmed.
+      if (status.confirmationStatus !== "confirmed" && status.confirmationStatus !== "finalized") return "unknown";
+      return status.err ? "failed" : "landed";
     }
     if (lastValidBlockHeight === null) return "unknown";
     // Not found. It is only certain that it will never land once the chain has FINALIZED past its last valid height.
@@ -103,7 +104,22 @@ export async function signatureOutcome(signature: string, lastValidBlockHeight: 
  *  this height, whatever blockhash it used (a blockhash cannot come from the future). The default doubles the 150
  *  blocks, so a seller-supplied blockhash from a node slightly ahead of ours is still covered. */
 export const PAYMENT_VALID_BLOCKS = Number(process.env.PAYMENT_VALID_BLOCKS ?? 300);
-export const currentBlockHeight = () => read((c) => c.getBlockHeight("confirmed"));
+/** The highest block height any of our endpoints reports. Used as an upper bound, so a lagging endpoint cannot understate it. */
+export async function currentBlockHeight(): Promise<number> {
+  const results = await Promise.allSettled(rpcUrls().map((u) => conn(u).getBlockHeight("confirmed")));
+  const heights = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  if (!heights.length) throw new Error("no RPC endpoint answered");
+  return Math.max(...heights);
+}
+
+/** Runs several reads against ONE endpoint, so they describe the same view of the chain. Fails over as a whole. */
+export async function pinned<T>(fn: (c: Connection) => Promise<T>): Promise<T> {
+  let last: unknown;
+  for (const url of rpcUrls()) {
+    try { return await fn(conn(url)); } catch (e) { last = e; }
+  }
+  throw last instanceof Error ? last : new Error("All RPC endpoints failed");
+}
 
 /** True only when a FINALIZED block is past the height. Asking "is this blockhash valid?" is not enough: a blockhash
  *  that is too new to be finalized gets the same answer as one that has expired. */

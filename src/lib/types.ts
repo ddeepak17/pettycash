@@ -120,6 +120,8 @@ export type StreamProof = {
   receivedAt: number;
   /** Token movements decoded by the stream filter, per owner wallet, in base units (negative = paid out). */
   movements: { owner: string; mint: string; deltaBase: string }[];
+  /** Memo texts in the transaction, as the stream filter read them. */
+  memos?: string[];
 };
 
 /** A receipt. `verified` is true only when the Stream's own data matches the seller's quote. */

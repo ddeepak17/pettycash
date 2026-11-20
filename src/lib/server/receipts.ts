@@ -33,7 +33,11 @@ export async function toReceipts(rows: PurchaseRow[]): Promise<Receipt[]> {
       }
     }
     const pullCheck = checkReceipt(pullProof, { kind: "pull", agent, owner: r.owner, mint: r.mint, amountBase: String(r.amount_base) });
-    const payCheck = checkReceipt(payProof, { kind: "payment", agent, payTo: r.pay_to, mint: r.mint, amountBase: String(r.amount_base) });
+    let payCheck = checkReceipt(payProof, { kind: "payment", agent, payTo: r.pay_to, mint: r.mint, amountBase: String(r.amount_base) });
+    // Two purchases from the same seller at the same price move the same amounts. Only the transaction carrying this
+    // purchase's own random note is its payment.
+    if (payCheck.verified && payProof && r.pay_memo && !(payProof.memos ?? []).includes(r.pay_memo))
+      payCheck = { verified: false, mismatch: "The payment the Stream delivered does not carry this purchase's own note, so it may belong to a different purchase." };
     out.push({
       id: r.id, runId: r.run_id, owner: r.owner, kind: r.kind,
       seller: { id: r.tool_id, name: r.seller_name ?? r.seller_host, host: r.seller_host, url: publicUrl(r.seller_url) },

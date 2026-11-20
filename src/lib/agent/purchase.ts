@@ -10,14 +10,14 @@
 // confirms its payment. If the payment never lands, the money goes back to the owner, exactly once. Enough is
 // written to the database BEFORE each transaction is broadcast that a purchase interrupted at any point (server
 // stopped, RPC timeout) can be settled later from chain state alone: see settleUnresolved().
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, type Connection } from "@solana/web3.js";
 import { formatUsd } from "../solana/cluster";
 import { buildPayment, getQuote, sendPayment, type Quote, type SellerRequest } from "../x402/client";
 import type { RunEvent, SellerRef } from "../types";
 import { agentKeypair, agentPublicKey, cluster, network, usdcMint } from "../server/config";
 import { ChainRefused, pull, readAllowance, refund } from "../server/agentWallet";
-import { currentBlockHeight, finalizedPast, PAYMENT_VALID_BLOCKS, primaryRpcUrl, read, signatureOutcome, TransactionFailed } from "../server/rpc";
-import { claimRefund, getPurchase, insertPurchase, moveStatus, openPurchases, paySignatureTaken, saveArtifact, setRunStatus, touchPurchase, updatePurchase, waitForApproval, type PurchaseRow } from "../server/store";
+import { currentBlockHeight, PAYMENT_VALID_BLOCKS, pinned, primaryRpcUrl, signatureOutcome, TransactionFailed } from "../server/rpc";
+import { claimRefund, insertPurchase, moveStatus, openPurchases, paySignatureTaken, recordRefundAttempt, saveArtifact, setRunStatus, touchPurchase, updatePurchase, waitForApproval, type PurchaseRow } from "../server/store";
 import { ata } from "../solana/allowances";
 import { decide, type PolicyDecision } from "./policy";
 
@@ -149,9 +149,11 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   // 4. Pull exactly the price from the owner's wallet. Solana's Allowances program decides whether this is allowed.
   //    The pull's signature and the payment's memo are on record before the pull is broadcast.
   let pulled: { signature: string; slot: number; ms: number };
+  let pullSigned = false;
   try {
     pulled = await pull(live, amount, async (signature, lastValidBlockHeight) => {
       await updatePurchase(purchaseId, { status: "pulling", pull_sig: signature, pull_last_valid_height: lastValidBlockHeight, pay_memo: payment.memo, pay_blockhash: payment.blockhash, pay_last_valid_height: payLastValidHeight });
+      pullSigned = true;
     }, purchaseId);
   } catch (e) {
     if (e instanceof ChainRefused) {
@@ -159,19 +161,21 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
       await ctx.emit({ type: "chain_refused", purchaseId, code: e.code, name: e.name, plain: e.plain });
       return failed("pull", e.plain, { chainRefused: true });
     }
-    if (e instanceof TransactionFailed) {
-      // Simulation failed, or the transaction landed and failed: either way no money moved.
+    if (e instanceof TransactionFailed && e.signature === null) {
+      // Simulation failed: the transaction was never broadcast, so no money moved.
       await updatePurchase(purchaseId, { status: "failed", error: "The transfer from the wallet failed." });
       return failed("pull", "The money could not be moved from the wallet. Nothing was spent.");
     }
-    // The pull was broadcast and we could not confirm it. It may still have landed: the reconciler finds out.
-    const row = await getPurchase(purchaseId).catch(() => null);
-    if (row?.status === "pulling") return failed("pull", "The transfer from the wallet could not be confirmed. If it did go through, the money is returned automatically within a few minutes.", { refund: { status: "pending" } });
+    // Once the pull was signed and broadcast, this code never calls it failed: only the chain can say that.
+    if (pullSigned) return failed("pull", "The transfer from the wallet could not be confirmed. If it did go through, the money is returned automatically within a few minutes.", { refund: { status: "pending" } });
     await updatePurchase(purchaseId, { status: "failed", error: "The transfer from the wallet could not be sent." }).catch(() => {});
     return failed("pull", "The money could not be moved from the wallet. Nothing was spent.");
   }
   // From here on a payment may be in flight. The row stays open until the chain itself settles the question.
-  await updatePurchase(purchaseId, { status: "paying", unresolved_until: new Date(Date.now() + target.timeoutMs + GRACE_MS) });
+  // Compare-and-set: if a reconciler already took this slow purchase over (and is returning the money), the payment
+  // that was built is never sent.
+  if (!(await moveStatus(purchaseId, "pulling", "paying", { unresolved_until: new Date(Date.now() + target.timeoutMs + GRACE_MS) })))
+    return failed("pull", "This purchase took too long and was cancelled before any payment was sent. The money is returned to the wallet.", { refund: { status: "pending" } });
   const after = await readAllowance(ctx.allowance).catch(() => null);
   await ctx.emit({ type: "pulled", purchaseId, signature: pulled.signature, amountBase: amount.toString(), remainingBase: (after?.remaining ?? (live.remaining - amount)).toString(), ms: pulled.ms });
 
@@ -182,8 +186,8 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   const reported = paid.signature && !(await paySignatureTaken(paid.signature, purchaseId).catch(() => true)) ? paid.signature : null;
 
   if (delivered) {
-    await updatePurchase(purchaseId, {
-      status: "delivered", pay_sig: reported, unresolved_until: new Date(Date.now() + GRACE_MS), http_status: paid.httpStatus, response_sha256: paid.sha256,
+    await moveStatus(purchaseId, "paying", "delivered", {
+      pay_sig: reported, unresolved_until: new Date(Date.now() + GRACE_MS), http_status: paid.httpStatus, response_sha256: paid.sha256,
       response_bytes: paid.bodyBytes, response_preview: preview(paid.bodyText, 600),
     });
     await ctx.emit({ type: "paid", purchaseId, signature: reported, httpStatus: paid.httpStatus!, ms: paid.ms });
@@ -206,15 +210,46 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
 
 const memoMatches = (field: string | null | undefined, memo: string) =>
   !!field && field.split("; ").some((part) => part.replace(/^\[\d+\]\s*/, "") === memo);
+const refundNote = (id: string) => `pettycash:refund:${id}`;
+const MAX_HISTORY_PAGES = 20;
+const MAX_CANDIDATES = 20;
 
-/** Reads one transaction and decides whether it is exactly this purchase's payment: it succeeded, the agent's
- *  holdings of the token fell by the amount and the recipient's rose by the amount. */
-async function isThePayment(signature: string, p: PurchaseRow): Promise<boolean | "unknown"> {
+type History = { reachedPull: boolean; payments: string[]; refunds: string[] };
+
+/** Reads the agent token account's transactions back to this purchase's pull, all from ONE endpoint, and picks out
+ *  the successful ones that carry the payment's memo or this purchase's refund note. Null when it could not be read. */
+async function historySincePull(c: Connection, p: PurchaseRow, commitment: "confirmed" | "finalized", minContextSlot?: number): Promise<History | null> {
+  const agentAta = ata(agentPublicKey(), new PublicKey(p.mint));
+  const out: History = { reachedPull: false, payments: [], refunds: [] };
+  let before: string | undefined;
+  for (let page = 0; page < MAX_HISTORY_PAGES; page++) {
+    let sigs;
+    try { sigs = await c.getSignaturesForAddress(agentAta, { limit: 1000, before, minContextSlot }, commitment); } catch { return null; }
+    for (const s of sigs) {
+      if (s.signature === p.pull_sig) { out.reachedPull = true; return out; }
+      if (s.err) continue;
+      if (p.pay_memo && memoMatches(s.memo, p.pay_memo)) out.payments.push(s.signature);
+      if (memoMatches(s.memo, refundNote(p.id))) out.refunds.push(s.signature);
+    }
+    if (sigs.length < 1000) return out;
+    before = sigs[sigs.length - 1].signature;
+  }
+  return out;
+}
+
+/** Decides whether one transaction is exactly this purchase's payment: it succeeded, it carries this purchase's own
+ *  note, the agent's holdings of the token fell by the amount and the recipient's rose by it. `listed` means the
+ *  chain's own history named the signature, so "not found" from a node is treated as unknown, never as no. */
+async function isThePayment(c: Connection, signature: string, p: PurchaseRow, listed: boolean): Promise<boolean | "unknown"> {
   let tx;
-  try { tx = await read((c) => c.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 })); } catch { return "unknown"; }
-  if (!tx || !tx.meta) return false;
+  try { tx = await c.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }); } catch { return "unknown"; }
+  if (!tx || !tx.meta) return listed ? "unknown" : false;
   if (tx.meta.err) return false;
   const meta = tx.meta;
+  if (p.pay_memo) {
+    const memos = (meta.logMessages ?? []).flatMap((l) => { const m = /Memo \(len \d+\): "(.*)"$/.exec(l); return m ? [m[1]] : []; });
+    if (!memos.includes(p.pay_memo)) return false;
+  }
   const agent = agentPublicKey().toBase58();
   const sum = (list: typeof meta.preTokenBalances, owner: string) => (list ?? []).filter((b) => b.owner === owner && b.mint === p.mint).reduce((n, b) => n + BigInt(b.uiTokenAmount.amount), 0n);
   const delta = (owner: string) => sum(meta.postTokenBalances, owner) - sum(meta.preTokenBalances, owner);
@@ -222,109 +257,133 @@ async function isThePayment(signature: string, p: PurchaseRow): Promise<boolean 
   return delta(agent) === -amount && delta(p.pay_to) === amount;
 }
 
-/** Looks for this purchase's payment among the agent token account's transactions since the pull.
- *  Returns the signature, null when it is certain there is none, or "unknown" when the chain could not be read
- *  far enough back. "Certain" means the history we read reaches the pull itself: if a node has pruned that far,
- *  we do not guess. */
-async function findPaymentOnchain(p: PurchaseRow): Promise<string | null | "unknown"> {
-  const candidates: string[] = [];
-  if (p.pay_sig) candidates.push(p.pay_sig);
-  let reachedPull = false;
-  if (p.pay_memo && p.pull_sig) {
-    const agentAta = ata(agentPublicKey(), new PublicKey(p.mint));
-    let before: string | undefined;
-    for (let page = 0; page < 10 && !reachedPull; page++) {
-      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 1000, before }, "confirmed")).catch(() => null);
-      if (sigs === null) return "unknown";
-      for (const s of sigs) {
-        if (s.signature === p.pull_sig) { reachedPull = true; break; }
-        if (!s.err && memoMatches(s.memo, p.pay_memo) && !candidates.includes(s.signature)) candidates.push(s.signature);
-      }
-      if (sigs.length < 1000) break;
-      before = sigs[sigs.length - 1].signature;
-    }
-  }
-  for (const signature of candidates) {
-    if (await paySignatureTaken(signature, p.id).catch(() => true)) continue; // one payment can settle one purchase only
-    const match = await isThePayment(signature, p);
+/** Looks for this purchase's payment. Returns its signature, null when it is certain there is none in the history
+ *  read (which must reach back to the pull itself), or "unknown" when we cannot be certain. We never guess. */
+async function lookForPayment(c: Connection, p: PurchaseRow, commitment: "confirmed" | "finalized", minContextSlot?: number): Promise<string | null | "unknown"> {
+  const h = await historySincePull(c, p, commitment, minContextSlot);
+  if (!h) return "unknown";
+  if (h.payments.length > MAX_CANDIDATES) return "unknown"; // someone is flooding the history with our memo: do not guess
+  const candidates: { signature: string; listed: boolean }[] = h.payments.map((signature) => ({ signature, listed: true }));
+  if (p.pay_sig && !h.payments.includes(p.pay_sig)) candidates.unshift({ signature: p.pay_sig, listed: false });
+  for (const cand of candidates) {
+    if (await paySignatureTaken(cand.signature, p.id).catch(() => true)) continue; // one payment settles one purchase only
+    const match = await isThePayment(c, cand.signature, p, cand.listed);
     if (match === "unknown") return "unknown";
-    if (match) return signature;
+    if (match) return cand.signature;
   }
-  return reachedPull ? null : "unknown";
+  return h.reachedPull ? null : "unknown";
 }
 
-/** Returns a purchase's money to its owner exactly once. The refund's signature is on record before it is broadcast,
- *  so an unconfirmed refund is looked up, never blindly repeated. */
-async function refundPurchase(p: Pick<PurchaseRow, "id" | "owner" | "amount_base">): Promise<string | null> {
-  if (!(await claimRefund(p.id))) { debug(p.id.slice(0, 8), "refund already claimed elsewhere"); return null; }
+/** "dead" only when it is certain the signed transaction can never land and has not landed: a finalized block is
+ *  past its last valid height, and the history read AFTER that, on the same endpoint, at finalized commitment, does
+ *  not contain it. The order matters: reading the history first would miss a payment that lands in between. */
+async function afterItsLastChance<T>(lastValidHeight: number, look: (c: Connection, finalizedSlot: number) => Promise<T | null | "unknown">): Promise<T | "dead" | "wait"> {
+  try {
+    return await pinned(async (c) => {
+      const slot = await c.getSlot("finalized");
+      const height = await c.getBlockHeight("finalized");
+      if (height <= lastValidHeight) return "wait" as const;
+      const found = await look(c, slot);
+      return found === null ? ("dead" as const) : found === "unknown" ? ("wait" as const) : found;
+    });
+  } catch { return "wait"; }
+}
+
+/** Returns a purchase's money to its owner exactly once.
+ *  - Only the holder of the claim may send it.
+ *  - Before sending, the chain is searched for a refund that already carries this purchase's note. If one landed
+ *    (for example one we lost track of), it is recorded and nothing more is sent.
+ *  - The refund's signature is written down before broadcast, under the claim. If the claim was lost, nothing is broadcast. */
+async function refundPurchase(p: PurchaseRow): Promise<string | null> {
+  const claim = await claimRefund(p.id);
+  if (!claim) { debug(p.id.slice(0, 8), "refund already claimed elsewhere"); return null; }
+  const release = () => moveStatus(p.id, "refunding", "refund_pending").catch(() => false);
+  const prior = await pinned((c) => historySincePull(c, p, "confirmed")).catch(() => null);
+  if (!prior || !prior.reachedPull) { debug(p.id.slice(0, 8), "history does not reach the pull; not refunding"); await release(); return null; }
+  if (prior.refunds.length) {
+    await moveStatus(p.id, "refunding", "refunded", { refund_sig: prior.refunds[0], unresolved_until: null });
+    return prior.refunds[0];
+  }
   try {
     const back = await refund(new PublicKey(p.owner), BigInt(p.amount_base), async (signature, lastValidBlockHeight) => {
-      await updatePurchase(p.id, { refund_try_sig: signature, refund_try_height: lastValidBlockHeight });
+      if (!(await recordRefundAttempt(p.id, claim, signature, lastValidBlockHeight))) throw new Error("refund claim lost before broadcast");
     }, p.id);
     await moveStatus(p.id, "refunding", "refunded", { refund_sig: back.signature, unresolved_until: null });
     return back.signature;
   } catch (e) {
     debug(p.id.slice(0, 8), "refund did not confirm:", e instanceof Error ? e.message.slice(0, 200) : e);
-    // Simulation failed or it failed onchain: nothing moved, so it is safe to try again later.
-    if (e instanceof TransactionFailed) await moveStatus(p.id, "refunding", "refund_pending", { refund_try_sig: null, refund_try_height: null }).catch(() => {});
-    // Otherwise the outcome is unknown: the row stays "refunding" with its signature, and is checked before any retry.
+    // Never broadcast (simulation failed, or the claim was lost): nothing moved, so it may be tried again.
+    if ((e instanceof TransactionFailed && e.signature === null) || (e instanceof Error && e.message.startsWith("refund claim lost"))) await release();
+    // Otherwise it was broadcast and the outcome is unknown: the row stays "refunding" and is settled from the chain.
     return null;
   }
 }
 
-/**
- * Settles every purchase whose money is not yet accounted for. Safe to run from several places at once.
- *
- *   pulling         the pull was signed but never confirmed here  -> landed: return the money; failed or expired: nothing moved
- *   paying          a payment was sent and the seller failed       -> found onchain: "paid"; can no longer land: return the money
- *   delivered/paid  the seller answered                            -> found onchain: settled; can no longer land: return the money
- *   refund_pending  the money must go back                         -> return it
- *   refunding       a refund was signed but never confirmed here   -> landed: done; failed or expired: try again
- */
 const debug = (...a: unknown[]) => { if (process.env.DEBUG_SETTLE === "1") console.log("[settle]", ...a); };
 
+/**
+ * Settles every purchase whose money is not yet accounted for. Safe to run from several places at once: every
+ * state change is a compare-and-set.
+ *
+ *   pulling         the pull was signed but never confirmed here  -> landed: return the money; failed or expired: nothing moved
+ *   paying          a payment was sent and the seller failed       -> found onchain: "paid"; can never land: return the money
+ *   delivered/paid  the seller answered                            -> found onchain: settled; can never land: return the money
+ *   refund_pending  the money must go back                         -> return it
+ *   refunding       a refund was signed but never confirmed here   -> found onchain by its note: done; can never land: try again
+ */
 export async function settleUnresolved(owner?: string): Promise<{ checked: number; refunded: number; foundPaid: number; stillOpen: number }> {
   const rows = await openPurchases(owner);
   let refunded = 0, foundPaid = 0, stillOpen = 0;
   const now = Date.now();
   for (const p of rows) {
     const waiting = p.unresolved_until ? new Date(p.unresolved_until).getTime() > now : false;
-    const sinceUpdate = now - new Date(p.updated_at).getTime();
+    const age = p.age_s ?? (now - new Date(p.updated_at).getTime()) / 1000;
     try {
       if (p.status === "pulling") {
-        if (sinceUpdate < 20_000) { stillOpen++; continue; } // a purchase is probably still in progress on another instance
+        if (age < 75) { stillOpen++; continue; } // the purchase itself is probably still confirming this pull
         const outcome = await signatureOutcome(p.pull_sig!, p.pull_last_valid_height === null ? null : Number(p.pull_last_valid_height));
-        if (outcome === "landed") { if (await moveStatus(p.id, "pulling", "refund_pending") && (await refundPurchase(p))) refunded++; else stillOpen++; }
+        debug(p.id.slice(0, 8), "pulling, pull outcome:", outcome);
+        if (outcome === "landed") { if ((await moveStatus(p.id, "pulling", "refund_pending")) && (await refundPurchase({ ...p, status: "refund_pending" }))) refunded++; else stillOpen++; }
         else if (outcome === "failed" || outcome === "expired") await moveStatus(p.id, "pulling", "failed", { settled_at: new Date(), error: "The transfer from the wallet did not go through. Nothing was spent." });
         else { await touchPurchase(p.id); stillOpen++; }
       } else if (p.status === "pulled") {
-        if (await moveStatus(p.id, "pulled", "refund_pending") && (await refundPurchase(p))) refunded++; else stillOpen++;
+        if ((await moveStatus(p.id, "pulled", "refund_pending")) && (await refundPurchase(p))) refunded++; else stillOpen++;
       } else if (p.status === "paying" || p.status === "delivered" || p.status === "paid") {
         if (p.status === "paying" && waiting) { stillOpen++; continue; } // the seller may still be answering
-        const found = await findPaymentOnchain(p);
+        const settle = async (signature: string) => {
+          if (await moveStatus(p.id, p.status, p.status === "paying" ? "paid" : p.status, { pay_sig: signature, settled_at: new Date(), unresolved_until: null,
+            ...(p.status === "paying" ? { error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` } : {}) })) foundPaid++;
+        };
+        const found = await pinned((c) => lookForPayment(c, p, "confirmed")).catch(() => "unknown" as const);
         debug(p.id.slice(0, 8), p.status, "found:", found, "waiting:", waiting, "lastValid:", p.pay_last_valid_height);
         if (found === "unknown") { await touchPurchase(p.id); stillOpen++; continue; }
-        if (found) {
-          if (await moveStatus(p.id, p.status, p.status === "paying" ? "paid" : p.status, { pay_sig: found, settled_at: new Date(), unresolved_until: null,
-            ...(p.status === "paying" ? { error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` } : {}) })) foundPaid++;
-          continue;
-        }
-        // No payment onchain yet. Money goes back only when the signed payment can never land any more.
-        const expired = trustWindowOnly() ? true : p.pay_last_valid_height === null ? null : await finalizedPast(Number(p.pay_last_valid_height));
-        debug(p.id.slice(0, 8), "expired:", expired);
-        if (expired === true && !waiting) {
-          // Compare-and-set: only the reconciler that moves the row out of its current state goes on to refund it.
-          if (await moveStatus(p.id, p.status, "refund_pending", { pay_sig: null }) && (await refundPurchase(p))) refunded++; else stillOpen++;
-        } else { await touchPurchase(p.id); stillOpen++; }
+        if (found) { await settle(found); continue; }
+        if (waiting || p.pay_last_valid_height === null) { await touchPurchase(p.id); stillOpen++; continue; }
+        // No payment yet. Money goes back only when the signed payment is certain never to land.
+        const verdict = trustWindowOnly() ? ("dead" as const) : await afterItsLastChance(Number(p.pay_last_valid_height), (c, slot) => lookForPayment(c, p, "finalized", slot));
+        debug(p.id.slice(0, 8), "verdict:", verdict);
+        if (verdict === "wait") { await touchPurchase(p.id); stillOpen++; }
+        else if (verdict === "dead") { if ((await moveStatus(p.id, p.status, "refund_pending", { pay_sig: null })) && (await refundPurchase(p))) refunded++; else stillOpen++; }
+        else await settle(verdict);
       } else if (p.status === "refund_pending") {
         if (await refundPurchase(p)) refunded++; else stillOpen++;
       } else if (p.status === "refunding") {
-        if (sinceUpdate < 45_000) { stillOpen++; continue; } // someone is sending it right now
-        if (!p.refund_try_sig) { await moveStatus(p.id, "refunding", "refund_pending"); stillOpen++; continue; }
-        const outcome = await signatureOutcome(p.refund_try_sig, p.refund_try_height === null ? null : Number(p.refund_try_height));
-        if (outcome === "landed") { if (await moveStatus(p.id, "refunding", "refunded", { refund_sig: p.refund_try_sig, unresolved_until: null })) refunded++; }
-        else if (outcome === "failed" || outcome === "expired") { await moveStatus(p.id, "refunding", "refund_pending", { refund_try_sig: null, refund_try_height: null }); stillOpen++; }
-        else { await touchPurchase(p.id); stillOpen++; }
+        if (age < 60) { stillOpen++; continue; } // someone is sending it right now
+        if (!p.refund_try_sig) {
+          // Claimed but never signed. If a refund with our note is onchain anyway, record it; otherwise release the claim.
+          const h = await pinned((c) => historySincePull(c, p, "confirmed")).catch(() => null);
+          if (h?.refunds.length) { if (await moveStatus(p.id, "refunding", "refunded", { refund_sig: h.refunds[0], unresolved_until: null })) refunded++; }
+          else if (h) { await moveStatus(p.id, "refunding", "refund_pending"); stillOpen++; }
+          else { await touchPurchase(p.id); stillOpen++; }
+          continue;
+        }
+        const lookRefund = async (c: Connection, slot?: number) => { const h = await historySincePull(c, p, slot === undefined ? "confirmed" : "finalized", slot); return !h || !h.reachedPull ? ("unknown" as const) : h.refunds[0] ?? null; };
+        const seen = await pinned((c) => lookRefund(c)).catch(() => "unknown" as const);
+        if (typeof seen === "string" && seen !== "unknown") { if (await moveStatus(p.id, "refunding", "refunded", { refund_sig: seen, unresolved_until: null })) refunded++; continue; }
+        const verdict = p.refund_try_height === null ? "wait" : await afterItsLastChance(Number(p.refund_try_height), (c, slot) => lookRefund(c, slot));
+        if (verdict === "wait") { await touchPurchase(p.id); stillOpen++; }
+        else if (verdict === "dead") { await moveStatus(p.id, "refunding", "refund_pending", { refund_try_sig: null, refund_try_height: null }); stillOpen++; }
+        else if (await moveStatus(p.id, "refunding", "refunded", { refund_sig: verdict, unresolved_until: null })) refunded++;
       }
     } catch (e) {
       console.error("settle failed for purchase", p.id, e instanceof Error ? e.message : e);

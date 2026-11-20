@@ -105,6 +105,7 @@ function toProof(row: ProofRow): StreamProof {
     // it is 0 when the block carried no time.
     receivedAt: blockTime === null ? 0 : Math.max(0, Number(row.received_ms) - blockTime * 1000),
     movements: movementsOf(row.payload),
+    memos: Array.isArray((row.payload as { memos?: unknown })?.memos) ? ((row.payload as { memos: unknown[] }).memos.filter((m) => typeof m === "string") as string[]) : [],
   };
 }
 

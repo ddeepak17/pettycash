@@ -3,6 +3,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { settleUnresolved } from "@/lib/agent/purchase";
 import { fail, json } from "@/lib/server/auth";
+import { pruneOldRows } from "@/lib/server/store";
 import { restStreamIfIdle } from "@/lib/server/streamHooks";
 
 export const runtime = "nodejs";
@@ -16,5 +17,6 @@ export async function GET(req: Request) {
   if (!secret || a.length !== b.length || !timingSafeEqual(a, b)) return fail("Not authorised.", 401);
   const settled = await settleUnresolved().catch(() => null);
   const stream = await restStreamIfIdle();
+  await pruneOldRows().catch(() => {});
   return json({ ok: true, settled, stream });
 }

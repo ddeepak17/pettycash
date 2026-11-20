@@ -1,5 +1,6 @@
 // Database access for runs, their timeline, purchases, approvals and rate limits.
 // The login used here can reach only the pettycash schema.
+import { randomUUID } from "node:crypto";
 import postgres from "postgres";
 import type { RunEvent, RunSummary } from "../types";
 import { cluster, databaseUrl } from "./config";
@@ -52,6 +53,8 @@ export type PurchaseRow = {
   unresolved_until: Date | null; created_at: Date; updated_at: Date; quote: unknown; policy: unknown;
   pull_last_valid_height: string | number | null; pay_blockhash: string | null; pay_last_valid_height: string | number | null; settled_at: Date | null;
   refund_try_sig: string | null; refund_try_height: string | number | null; attempts: number;
+  /** Seconds since the row last changed, by the database's clock. Present on rows from openPurchases. */
+  age_s?: number;
 };
 export async function insertPurchase(p: {
   runId: string | null; owner: string; cluster: string; kind: "tool" | "reasoning"; toolId: string | null; step: number; sellerUrl: string; sellerHost: string;
@@ -87,9 +90,9 @@ export const housePurchases = async (limit: number) =>
  *  Least recently looked at first, so one stuck row cannot starve the rest. */
 export const openPurchases = async (owner?: string) =>
   (await (owner
-    ? sql()`select * from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
+    ? sql()`select *, extract(epoch from (now() - updated_at))::float as age_s from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
         and status in ('pulling', 'pulled', 'paying', 'delivered', 'paid', 'refund_pending', 'refunding') and cluster = ${cluster()} and owner = ${owner} order by updated_at asc limit 25`
-    : sql()`select * from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
+    : sql()`select *, extract(epoch from (now() - updated_at))::float as age_s from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
         and status in ('pulling', 'pulled', 'paying', 'delivered', 'paid', 'refund_pending', 'refunding') and cluster = ${cluster()} order by updated_at asc limit 25`)) as unknown as PurchaseRow[];
 
 /** Marks a row as looked at, so the next pass starts with rows that have waited longer. */
@@ -154,11 +157,24 @@ export async function getArtifact(purchaseId: string): Promise<{ contentType: st
   return row ? { contentType: row.content_type as string, bytes: row.bytes as Buffer } : null;
 }
 
-/** Takes exclusive ownership of a purchase's refund. Only one caller gets true, so money is never returned twice. */
-export async function claimRefund(id: string): Promise<boolean> {
-  const rows = await sql()`update pettycash.purchases set status = 'refunding', refund_try_sig = null, refund_try_height = null, updated_at = now()
+/** Takes exclusive ownership of a purchase's refund and returns a claim id, or null if someone else holds it.
+ *  Only the holder of the claim may record and broadcast the refund, so a stalled holder cannot collide with a new one. */
+export async function claimRefund(id: string): Promise<string | null> {
+  const claim = randomUUID();
+  const rows = await sql()`update pettycash.purchases set status = 'refunding', refund_claim = ${claim}, refund_try_sig = null, refund_try_height = null, updated_at = now()
     where id = ${id} and status = 'refund_pending' and refund_sig is null returning id`;
+  return rows.length === 1 ? claim : null;
+}
+/** Writes down a signed refund before it is broadcast. False when the claim was lost: the caller must then NOT broadcast. */
+export async function recordRefundAttempt(id: string, claim: string, signature: string, lastValidBlockHeight: number): Promise<boolean> {
+  const rows = await sql()`update pettycash.purchases set refund_try_sig = ${signature}, refund_try_height = ${lastValidBlockHeight}, updated_at = now()
+    where id = ${id} and status = 'refunding' and refund_claim = ${claim} and refund_try_sig is null and refund_sig is null returning id`;
   return rows.length === 1;
+}
+/** Housekeeping: old replay-guard entries and old deliveries are not needed any more. */
+export async function pruneOldRows() {
+  await sql()`delete from pettycash.webhook_nonces where received_at < now() - interval '2 days'`;
+  await sql()`delete from pettycash.rate_limits where window_start < now() - interval '2 days'`;
 }
 
 /** Compare-and-set on a purchase's status. Returns true only for the one caller that made the change, so two
