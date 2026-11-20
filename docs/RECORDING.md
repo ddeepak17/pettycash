@@ -34,3 +34,16 @@ YouTube accepts `.webm` directly. For mp4: `brew install ffmpeg` then `ffmpeg -i
 ## Testing the tool without spending
 
 `NEXT_PUBLIC_MOCK=1 pnpm dev --port 3344`, then run scenes with `http://127.0.0.1:3344 --allow-mock --out qa/recordings/mock-test/<scene>`. Do not commit videos.
+
+## Putting the recordings together
+
+`scripts/video/assemble.py` turns recordings into one captioned, narrated 1080p video. It only trims, changes speed (never slower than real time; a "sped up" badge appears when faster), and adds captions and a voice. It cannot create footage.
+
+```bash
+brew install ffmpeg                                   # once
+python3 scripts/video/assemble.py qa/recordings/plan.json out.mp4
+```
+
+The plan is a JSON list of segments: a recording (`clip`, `start`, `use` seconds) or a title card (`card`, `sub`), the narration (`say`) and an optional `caption`. Narration uses the macOS `say` voice named in the plan, so it is a computer voice: a person's voice recorded over the same footage is better. Title cards and captions are rendered with Chrome because the Homebrew build of ffmpeg has no text filter.
+
+The own-wallet scene comes from `RECORD=1 pnpm tsx tests/e2e/journey.ts wallet <url> "<errand>" <amount>`. It uses a test wallet that signs automatically, and the video's caption says so. Never run that journey with a wallet that also owns the public demo petty cash unless you have read the safety check in the script.
