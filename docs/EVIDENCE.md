@@ -8,7 +8,7 @@ Counts of checks and tests are for the code at commit `2f53480` on 2026-11-20. T
 |---|---|---|
 | 1 | Instruction builders work against the mainnet build of the Allowances program | Done, 11 of 11 |
 | 2 | The purchase engine delivers, refunds and stops at every limit | Done, 25 of 25, with test doubles for the seller and the model |
-| 3 | Automated tests | Done, 148 pass (7 need the database) |
+| 3 | Automated tests | Done, 154 pass (13 need the database) |
 | 4 | Every catalog seller is live on Solana mainnet | Done, 10 of 10 |
 | 5 | The Stream filter reports what the chain recorded | Done, on real mainnet blocks in QuickNode's sandbox |
 | 6 | The Allowances program is in real use | Done, counted on mainnet |
@@ -102,7 +102,7 @@ In check H the local seller's search result contains the text "IGNORE ALL PREVIO
 
 The result of 25 of 25 was recorded by the team on 2026-11-20 after the reconciliation rewrite. The run takes about five minutes because it waits for a finalized block to pass the last height at which an unsettled payment could land.
 
-## 3. Automated tests: 148 pass
+## 3. Automated tests: 154 pass
 
 ```bash
 pnpm test
@@ -113,16 +113,19 @@ pnpm test
 | `tests/unit/policy.test.ts` | 17 | The rule check: every deny rule, every ask rule, exact boundaries |
 | `tests/unit/payment-check.test.ts` | 13 | The pre-send payment check: wrong amount, recipient, token or source, a second transfer, an added token approval, a plain `Transfer`, another program, the agent as fee payer |
 | `tests/unit/loop.test.ts` | 13 | Reading the model's reply, trimming results, cleaning tool input, each seller's request going only to its pinned host, money formatting, finding a delivered image |
-| `tests/unit/auth.test.ts` | 7 | Wallet sign-in, session cookies, same-origin check |
+| `tests/unit/auth.test.ts` | 8 | Wallet sign-in, session cookies, same-origin check |
+| `tests/unit/refund-claim.test.ts` | 6 | A refund goes to one caller only, and a reconciler holding an old copy of a purchase can neither release nor overwrite a newer refund in flight (needs the database) |
 | `tests/stream/match.test.ts` | 31 | The verification rule for pulls and payments, and parsing of webhook bodies |
 | `tests/stream/filter.test.ts` | 19 | The Stream filter, including two real mainnet transactions as fixtures |
 | `tests/stream/control.test.ts` | 17 | Activating at the chain tip, pausing when idle, never touching another stream |
 | `tests/stream/route.test.ts` | 12 | The webhook: authentication, replay, idempotency, database failure |
 | `tests/stream/verify.test.ts` | 11 | The webhook signature and timestamp checks |
 
-That is 50 unit tests and 90 Stream pipeline tests. They were run on 2026-11-20 and all passed.
+| `tests/stream/store.test.ts` | 7 | Storing Stream deliveries and looking a payment up by its note (needs the database) |
 
-`tests/stream/store.test.ts` holds 7 more tests. They run only when `DATABASE_URL` is set, against that database, and delete what they write. Their result is not recorded here.
+That is 57 unit tests and 97 Stream pipeline tests. They were run on 2026-11-20, with the database, and all 154 passed.
+
+The 13 tests that need the database run only when `DATABASE_URL` is set, against that database, and delete what they write. Without it they are skipped and the other 141 run. The continuous integration run on GitHub has no database, so it runs the 141.
 
 ## 4. Live unpaid quotes on Solana mainnet: 10 of 10
 

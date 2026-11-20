@@ -22,7 +22,7 @@ Every row is done. Rows 7 to 12 are real transactions on Solana mainnet from 202
 |---|---|---|---|
 | 1 | Our instruction builders work against the mainnet build of the Allowances program | 11 of 11 checks pass in a local validator: capped pull, over-limit pull refused (program error 300), wrong key refused (error 130), revoke, recurring period limit (error 400), expiry (error 128) | `scripts/verify-allowances-local.ts` |
 | 2 | The purchase engine delivers, refunds and stops at every limit | 25 of 25 checks pass in a local rehearsal. The seller and the model in the rehearsal are test doubles. The payments really settle on the local chain | `scripts/rehearse-local.ts` |
-| 3 | Automated tests | 148 pass: 51 unit tests and 97 Stream pipeline tests (7 of the Stream tests need the database) | `pnpm test` |
+| 3 | Automated tests | 154 pass: 57 unit tests and 97 Stream pipeline tests (13 of them need the database) | `pnpm test` |
 | 4 | Every catalog seller is live on Solana mainnet | 10 of 10 endpoints answered an unpaid request with a USDC price, each naming its pinned recipient, on 2026-11-20 | `pnpm quotes` |
 | 5 | The Stream filter reports what the chain recorded | Run in QuickNode's own sandbox on real mainnet blocks. Its token movements equal the balances `getTransaction` returns from a different RPC provider | [infra/quicknode/EVIDENCE.md](infra/quicknode/EVIDENCE.md) |
 | 6 | The Allowances program is in real use | 22 fixed and 3,621 recurring allowance accounts on mainnet on 2026-11-20 | `getProgramAccounts` by account size, see [docs/EVIDENCE.md](docs/EVIDENCE.md) |
@@ -274,7 +274,7 @@ pnpm test        # unit tests and Stream pipeline tests, no network needed
 pnpm quotes      # asks every catalog seller for its price on mainnet; unpaid, nothing is signed
 ```
 
-`pnpm test` runs 148 tests. Seven of them, for the storage of Stream deliveries, need `DATABASE_URL` and are skipped without it.
+`pnpm test` runs 154 tests. Thirteen of them, for the storage of Stream deliveries and for refund claims, need `DATABASE_URL` and are skipped without it.
 
 Local chain checks. Terminal 1 starts a validator that loads the mainnet build of the Allowances program:
 
