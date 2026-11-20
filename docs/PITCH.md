@@ -2,7 +2,7 @@
 
 Four minutes on stage, then two minutes of questions. The script below is about 550 spoken words. The demo is live on the deployed app, not on slides. Interface labels in quotation marks are the exact labels from `docs/VIDEO.md`.
 
-Anything in square brackets starting with `PENDING` is not proven yet. Say that sentence only if the slot has been filled with a real signature or result. If it is not filled, use the fallback line shown next to it. Never say a number or a transaction that is not in the README evidence table.
+Updated 2026-11-20 04:20 CST: the mainnet items below are proven. The README evidence table, rows 7 to 12, has the transaction links. Never say a number or a transaction that is not in that table.
 
 ## Before you go on stage
 
@@ -34,10 +34,10 @@ Do each action while saying the line beside it. Lines after "Say:" are spoken; e
    Only say "verified" while the stamp is on screen. If it has not appeared, say "it is still waiting for independent confirmation" and move on.
 4. Click "Test the limit". Show "Solana refused it. The limit holds." and "program error 300 · amountExceedsLimit". Click "Open the failed transaction on Solana Explorer".
    Say: "What if the agent, or even our own server, tried to take more? Let us try. We ask Solana to pull one millionth of a dollar more than what is left. Refused. This is a real failed transaction. The limit is Solana's program, not our code."
-   [PENDING: on mainnet this refusal needs a petty cash with budget. The README lists the mainnet refusal as pending. If the live test does not run, say: "On a local chain this refusal passes in our checks, and I will show the live one if it is ready."]
+   (Proven on mainnet: the failed transaction is row 9 of the README evidence table. The landing page link "Try to overspend the house petty cash" shows it live with no wallet.)
 5. If time and a wallet are ready: click "Revoke", approve in the wallet.
    Say: "When I change my mind, I revoke. One click, from my own wallet. It works even without our site."
-   [PENDING: a mainnet revoke signature. If it is not done, skip this step and say: "Revoke is one instruction from your own wallet. We have checked it against the program on a local chain."]
+   (Proven on mainnet: row 10 of the README evidence table.)
 
 ### Why Solana and why QuickNode Streams (2:15 to 2:55)
 
@@ -54,7 +54,7 @@ Say: "The allowance idea is not ours. Solana announced it, a tutorial shows it, 
 ### What is next (3:15 to 3:45)
 
 Say: "Next, we want to remove the brief moment where the agent's key holds money. We would propose a payment scheme where the seller is paid straight from your wallet under the allowance. After that, daily budgets in the interface, an open record of which sellers actually deliver, and a professional security audit before anyone uses more than small amounts. Today this is a hackathon build for cents and single dollars, and we say so."
-[PENDING: a real purchase signature. Add only if true: "One real purchase, with both transactions, is on the page: [PENDING: real purchase signature]."]
+"Every purchase you just saw is a real transaction on Solana mainnet. The first one we ever made, with both of its transactions, is row 7 of our README."
 
 ### Close (3:45 to 4:00)
 

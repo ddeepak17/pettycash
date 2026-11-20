@@ -63,6 +63,13 @@ The rehearsal itself then caught two more mistakes in the fixes, which are worth
 - A brand-new blockhash is reported as "not valid" at finalized commitment, exactly like an expired one. Asking that question would have returned money while a payment could still land. The rule is now a block height: money returns only when a finalized block is past the last height at which the payment could land.
 - Two transactions with the same instructions and the same recent blockhash are byte-identical and share one signature, so the chain runs them once. Two refunds of the same amount to the same wallet collapsed into one while both were recorded. Every pull and refund now carries a unique note, and the database refuses to record one signature for two purchases.
 
+A second review of the rewritten code, the same day, found further races, which were fixed before the public demo stayed on:
+
+- A reconciler could take over a slow pull and return the money while the purchase went on to pay. The step from "pulling" to "paying" is now a compare-and-set, and a purchase that loses it never sends its payment.
+- The check for "this payment can never land" read the history first and the finalized height second, possibly from two endpoints. It now reads the finalized slot and height first, then the history at finalized commitment from the same endpoint.
+- A refund whose confirmation was lost could be sent again. Every refund carries a note unique to its purchase, and the chain is searched for that note before any refund is sent.
+- A seller-reported signature was accepted on balances alone, so the payment of one purchase could be claimed for another at the same price. A payment must now carry the purchase's own random note, both in our chain read and in the Stream check.
+
 | Threat | What stops it now | Where |
 |---|---|---|
 | A seller answers HTTP 200, or claims a settlement, without being paid | The purchase stays open until our own read of the chain finds the exact payment. If it can never land, the money returns to the owner | `settleUnresolved` in `src/lib/agent/purchase.ts` |

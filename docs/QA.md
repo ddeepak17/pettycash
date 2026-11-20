@@ -2,7 +2,7 @@
 
 Two minutes of questions follow the four-minute pitch. Keep each answer to two to four sentences. Every answer below is taken from `README.md`, `docs/TRUST.md`, `docs/EVIDENCE.md` or `docs/ARCHITECTURE.md`. Where we have not done something, the answer says so.
 
-Slots in square brackets starting with `PENDING` are not proven. Do not say them unless the README evidence table has been updated. At the time of writing, a real paid purchase on mainnet, the over-limit refusal on mainnet, a mainnet revoke, the first Stream delivery of a purchase by our own agent, and the funded public demo account are all pending.
+Updated 2026-11-20 04:20 CST: a real paid purchase on mainnet, the over-limit refusal, a revoke, a refund after a real seller failed, and the funded public demo are all done (README evidence table, rows 7 to 12). The only slots left are in the question about AI tools, which the team fills in about its own role.
 
 ## Solana representative
 
@@ -56,7 +56,7 @@ Settling unclear payments safely: what to do when a seller goes quiet after a pa
 An AI-assisted adversarial review found that the same refund could be sent twice, that a seller's own settlement claim was trusted, that money was pulled before the payment was known to be buildable, and that a payment could be pushed out of the range we searched. All were fixed. The local rehearsal then caught two mistakes in the fixes: a brand-new blockhash looks invalid exactly like an expired one, and two identical transactions share one signature, so two refunds collapsed into one.
 
 **16. How much works today, and how much is pending?**
-Done and reproducible: our instruction builders pass 11 of 11 checks against the mainnet program build on a local chain, the purchase engine passes 25 of 25 in a local rehearsal (with a test-double seller and model), 148 automated tests pass, all ten catalog sellers answered with a mainnet price, and the live Stream delivered real mainnet payments to our webhook. Pending: [PENDING: real purchase signatures], [PENDING: mainnet over-limit refusal signature], [PENDING: mainnet revoke signature], [PENDING: Stream delivery verifying our own purchase], [PENDING: funded public demo account]. Say clearly which of those is filled in on the day.
+Done and reproducible: our instruction builders pass 11 of 11 checks against the mainnet program build on a local chain, the purchase engine passes 25 of 25 in a local rehearsal (with a test-double seller and model), 148 automated tests pass, and all ten catalog sellers answered with a mainnet price. Done for real on Solana mainnet on 2026-11-20: the first paid purchase, two full errands, nine of the ten catalog endpoints paid and delivered, receipts verified by the Stream about a second after their block, an over-limit pull refused with error 300, a revoke, and a refund after a real seller answered HTTP 502. The public demo is funded with a small daily budget. Not done: image generation has not been bought yet, there has been no professional audit, and the amounts are cents.
 
 **17. What would you do with another month?**
 Build the proposal for paying the seller straight from the allowance, put recurring daily budgets in the interface (the program and our server already support them), build an open per-seller delivery record from Stream-verified receipts only, and get a professional audit of the server-side rule check and payment check.

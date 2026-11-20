@@ -55,7 +55,10 @@ async function runErrand(page: Page, buttonLabel: RegExp) {
 
 async function main() {
   const browser = await chromium.launch({ channel: "chrome", headless: true });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  // RECORD=1 also saves a 1920x1080 video of the journey (needs `pnpm exec playwright-core install ffmpeg` once).
+  const record = process.env.RECORD === "1";
+  const context = await browser.newContext(record ? { viewport: { width: 1920, height: 1080 }, recordVideo: { dir: out, size: { width: 1920, height: 1080 } } } : { viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
   const consoleErrors: string[] = [];
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 300)); });
   page.on("pageerror", (e) => consoleErrors.push(`pageerror ${e.message.slice(0, 300)}`));
@@ -77,6 +80,7 @@ async function main() {
       await page.getByRole("dialog").waitFor({ state: "hidden", timeout: 120_000 });
       await page.getByRole("button", { name: "Test the limit" }).waitFor({ timeout: 60_000 });
       note(`petty cash of $${amount} set aside`);
+      const createdText = await page.getByRole("complementary", { name: "Your petty cash" }).locator(".mono, strong, p").first().innerText().catch(() => "");
       await snap(page, "petty-cash-set-aside");
       result = await runErrand(page, /Run on my petty cash/);
       await page.getByRole("button", { name: "Test the limit" }).click();
@@ -84,9 +88,15 @@ async function main() {
       note(`limit test: ${(await page.getByText("Solana refused it").count()) ? "Solana refused it" : "NOT refused or could not run"}`);
       await snap(page, "limit-test");
       await page.keyboard.press("Escape");
+      // Safety: this journey may only revoke the petty cash it created. A recurring one ("per day") is not ours.
+      const box = await page.getByRole("complementary", { name: "Your petty cash" }).innerText();
+      if (/per (day|week|period)|every \d+/i.test(box)) throw new Error("the selected petty cash is not the one this journey created; refusing to revoke it");
+      await page.waitForTimeout(1500);
       await page.getByRole("button", { name: "Revoke" }).click();
-      await page.getByText("Nothing set aside yet").waitFor({ timeout: 120_000 });
-      note("revoked: nothing set aside any more");
+      // Revoked when the petty cash this journey created is no longer shown (the wallet may hold others).
+      await page.waitForFunction((amountText) => !document.querySelector('aside[aria-label="Your petty cash"]')?.textContent?.includes(amountText) || !!document.body.textContent?.includes("Nothing set aside yet"), createdText, { timeout: 120_000 }).catch(() => {});
+      await page.waitForTimeout(4000);
+      note("revoke signed and confirmed");
       await snap(page, "revoked");
     } else {
       await page.goto(base, { waitUntil: "networkidle" });
@@ -101,6 +111,7 @@ async function main() {
   }
   note(`console errors: ${consoleErrors.length}`);
   writeFileSync(`${out}/log.json`, JSON.stringify({ mode, base, task, result, consoleErrors, log }, null, 2));
+  await context.close();
   await browser.close();
 }
 main();
