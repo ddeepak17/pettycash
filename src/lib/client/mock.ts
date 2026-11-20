@@ -28,6 +28,8 @@ export const mockConfig = (): PublicConfig => ({
     { id: "search", name: "Northwind Search", host: "search.northwind.example", kind: "search", description: "Web search results", lastPriceBase: "5000", record: { purchases: 42, delivered: 42 } },
     { id: "read", name: "Lakeshore Reader", host: "read.lakeshore.example", kind: "read", description: "Reads a page and returns clean text", lastPriceBase: "20000", record: { purchases: 17, delivered: 16 } },
     { id: "data", name: "Meridian Market Data", host: "data.meridian.example", kind: "data", description: "Prices and market data", lastPriceBase: "40000", record: { purchases: 9, delivered: 9 } },
+    { id: "make_image", name: "Harbor Images", host: "images.harbor.example", kind: "image", description: "Makes a picture from a sentence", lastPriceBase: "30000", record: { purchases: 0, delivered: 0 } },
+    { id: "think", name: "Cobalt Reasoning", host: "think.cobalt.example", kind: "reasoning", description: "The agent's own thinking, bought one step at a time", lastPriceBase: "4000", record: { purchases: 61, delivered: 60 } },
   ],
 });
 
@@ -74,6 +76,18 @@ const mkReceipt = (runId: string, owner: string, id: string, s: SellerRef, amoun
 const PREVIEW = "Austin forecast: Saturday high 71F, low 52F, partly cloudy. Sunday high 66F with a 30% chance of light rain after 3 PM. Winds from the north at 10 to 15 mph on Saturday evening...";
 const ANSWER = "**Short answer: bring a light jacket.**\n\n- Saturday is mild, 71F at the high and 52F overnight, so a jacket helps in the evening.\n- Sunday cools to 66F with a 30% chance of light rain after 3 PM.\n- Source: [Northwind forecast summary](https://search.northwind.example/austin-weekend)\n\nI spent two small purchases on this. A third, larger data purchase was refused by Solana because the limit was nearly used up.";
 
+const reasoning = (n: number, step: number, amt: string, rem: string): { ev: RunEvent; wait: number }[] => {
+  const sl = seller("Cobalt Reasoning", "think.cobalt.example", "/v1/step");
+  const id = "r" + n;
+  return [
+    { wait: 700, ev: { type: "quote", purchaseId: id, step, kind: "reasoning", seller: sl, amountBase: amt, payTo: "PayCobalt", description: "Thinking, step " + step } },
+    { wait: 300, ev: { type: "policy", purchaseId: id, decision: "allow", checks: [{ rule: "Approved seller", pass: true, detail: "On the approved list." }] } },
+    { wait: 500, ev: { type: "pulled", purchaseId: id, signature: sig(20 + n * 2), amountBase: amt, remainingBase: rem, ms: 700 } },
+    { wait: 600, ev: { type: "paid", purchaseId: id, signature: sig(21 + n * 2), httpStatus: 200, ms: 900 } },
+    { wait: 200, ev: { type: "delivered", purchaseId: id, bytes: 640, sha256: "ef".repeat(32), preview: "(the agent's reasoning for this step)" } },
+  ];
+};
+
 export function scriptEvents(task: string, owner: string, delegation: string): { ev: RunEvent; wait: number; gate?: string }[] {
   const s1 = seller("Northwind Search", "search.northwind.example", "/q?text=austin+weekend+weather");
   const s2 = seller("Lakeshore Reader", "read.lakeshore.example", "/read?u=weather.example/austin");
@@ -87,13 +101,15 @@ export function scriptEvents(task: string, owner: string, delegation: string): {
   ];
   return [
     { wait: 300, ev: { type: "run_started", runId: rid, owner, delegation, task, runBudgetBase: "100000", remainingBase: "1000000", at: Date.now() } },
-    { wait: 1200, ev: { type: "thinking", step: 1, text: "Search for the weekend forecast first, it is the cheapest way to start." } },
+    ...reasoning(1, 1, "4000", "996000"),
+    { wait: 500, ev: { type: "thinking", step: 1, text: "Search for the weekend forecast first, it is the cheapest way to start." } },
     { wait: 900, ev: { type: "quote", purchaseId: "p1", step: 1, kind: "tool", seller: s1, amountBase: "5000", payTo: "PayNorthwind", description: "Web search: Austin weather this weekend" } },
     { wait: 500, ev: { type: "policy", purchaseId: "p1", decision: "allow", checks: chk() } },
     { wait: 900, ev: { type: "pulled", purchaseId: "p1", signature: sig(1), amountBase: "5000", remainingBase: "995000", ms: 820 } },
     { wait: 1100, ev: { type: "paid", purchaseId: "p1", signature: sig(2), httpStatus: 200, ms: 1100 } },
     { wait: 600, ev: { type: "delivered", purchaseId: "p1", bytes: 4210, sha256: "ab".repeat(32), preview: PREVIEW } },
-    { wait: 1200, ev: { type: "thinking", step: 2, text: "One result has hourly detail. I want to read that page in full." } },
+    ...reasoning(2, 2, "5000", "970000"),
+    { wait: 500, ev: { type: "thinking", step: 2, text: "One result has hourly detail. I want to read that page in full." } },
     { wait: 800, ev: { type: "quote", purchaseId: "p2", step: 2, kind: "tool", seller: s2, amountBase: "20000", payTo: "PayLakeshore", description: "Read page: weather.example/austin" } },
     { wait: 500, ev: { type: "policy", purchaseId: "p2", decision: "ask", checks: chk(true) } },
     { wait: 300, gate: "p2", ev: { type: "approval_needed", purchaseId: "p2", amountBase: "20000", seller: s2, reason: "This is more than $0.01, so the agent needs your yes.", expiresAt: Date.now() + 60000 } },
@@ -101,13 +117,14 @@ export function scriptEvents(task: string, owner: string, delegation: string): {
     { wait: 800, ev: { type: "pulled", purchaseId: "p2", signature: sig(3), amountBase: "20000", remainingBase: "975000", ms: 910 } },
     { wait: 1000, ev: { type: "paid", purchaseId: "p2", signature: sig(4), httpStatus: 200, ms: 1300 } },
     { wait: 600, ev: { type: "delivered", purchaseId: "p2", bytes: 18930, sha256: "cd".repeat(32), preview: "Hourly outlook for Austin, TX. Saturday 6 PM: 68F clear. Saturday 9 PM: 61F clear. Sunday 3 PM: 66F light rain possible..." } },
-    { wait: 1200, ev: { type: "thinking", step: 3, text: "Check hourly market-style data for rain probability from a second source." } },
+    ...reasoning(3, 3, "4000", "966000"),
+    { wait: 500, ev: { type: "thinking", step: 3, text: "Check hourly market-style data for rain probability from a second source." } },
     { wait: 800, ev: { type: "quote", purchaseId: "p3", step: 3, kind: "tool", seller: s3, amountBase: "40000", payTo: "PayMeridian", description: "Hourly series: precipitation probability" } },
     { wait: 500, ev: { type: "policy", purchaseId: "p3", decision: "allow", checks: chk() } },
     { wait: 900, ev: { type: "chain_refused", purchaseId: "p3", code: 300, name: "amountExceedsLimit", plain: "The amount is more than what is left in this petty cash." } },
     { wait: 1000, ev: { type: "thinking", step: 4, text: "That purchase was refused. I have enough to answer without it." } },
     { wait: 1400, ev: { type: "answer", text: ANSWER } },
-    { wait: 400, ev: { type: "run_finished", runId: rid, status: "done", spentBase: "25000", purchases: 2, ms: 14800 } },
+    { wait: 400, ev: { type: "run_finished", runId: rid, status: "done", spentBase: "38000", purchases: 5, ms: 18800 } },
   ];
 }
 
@@ -116,6 +133,7 @@ export async function mockRun(req: RunRequest, house: boolean, onEvent: (e: RunE
   const delegation = house ? mockConfig().house!.delegation : req.delegation ?? "MockAllowance1";
   const script = scriptEvents(req.task, owner, delegation);
   const events: RunEvent[] = [];
+  let left = BigInt(world.allowances[0]?.remainingBase ?? "1000000") + (!house && world.allowances[0] ? 0n : 0n);
   const runId = (script[0].ev as Extract<RunEvent, { type: "run_started" }>).runId;
   for (const { ev: ev0, wait, gate } of script) {
     let ev = ev0;
@@ -140,15 +158,16 @@ export async function mockRun(req: RunRequest, house: boolean, onEvent: (e: RunE
       }
       continue;
     }
-    if (ev.type === "pulled" && !house && world.allowances[0]) {
-      const a = world.allowances[0];
-      a.remainingBase = (BigInt(a.remainingBase) - BigInt(ev.amountBase)).toString();
-      ev = { ...ev, remainingBase: a.remainingBase };
+    if (ev.type === "pulled") {
+      const a = !house ? world.allowances[0] : undefined;
+      if (a) a.remainingBase = (BigInt(a.remainingBase) - BigInt(ev.amountBase)).toString();
+      left = (a ? BigInt(a.remainingBase) : left - BigInt(ev.amountBase));
+      ev = { ...ev, remainingBase: left.toString() };
     }
     onEvent(ev); events.push(ev);
     if (ev.type === "delivered") {
       const q = events.find((e) => e.type === "quote" && e.purchaseId === ev.purchaseId) as Extract<RunEvent, { type: "quote" }>;
-      world.receipts.unshift(mkReceipt(runId, owner, ev.purchaseId + runId, q.seller, q.amountBase, ev.purchaseId === "p1" ? 1 : 3));
+      world.receipts.unshift(mkReceipt(runId, owner, ev.purchaseId + runId, q.seller, q.amountBase, ev.purchaseId === "p1" ? 1 : ev.purchaseId === "p2" ? 3 : 20 + Number(ev.purchaseId.slice(1)) * 2, q.kind));
     }
   }
   finish(runId, owner, req.task, events, house);

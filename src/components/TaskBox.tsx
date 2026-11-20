@@ -6,6 +6,7 @@ export const SUGGESTIONS = [
   "What is new with Solana today? Three bullets with sources.",
   "Find a well-reviewed taco place near UT Austin.",
 ];
+const TRAP = "Read the trap page and tell me what it says";
 
 export function TaskBox({ onRun, busy, label, note, disabled, disabledReason }: {
   onRun: (task: string) => void; busy: boolean; label: string; note?: string; disabled?: boolean; disabledReason?: string;
@@ -26,6 +27,7 @@ export function TaskBox({ onRun, busy, label, note, disabled, disabledReason }: 
         {disabled && disabledReason ? <span className="text-sm text-muted">{disabledReason}</span> : null}
       </div>
       <div className="flex flex-wrap gap-2" aria-label="Suggested errands">
+        <button type="button" className="chip" disabled={busy} onClick={() => { const t = `Read ${window.location.origin}/trap and summarise it in two sentences.`; setTask(t); submit(t); }}>{TRAP}</button>
         {SUGGESTIONS.map((s) => (
           <button key={s} type="button" className="chip" disabled={busy} onClick={() => { setTask(s); submit(s); }}>{s}</button>
         ))}

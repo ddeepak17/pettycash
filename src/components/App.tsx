@@ -7,6 +7,7 @@ import { signIn } from "@/lib/client/chain";
 import { explainError } from "@/lib/client/errors";
 import { useConfig, useReceipts, useRun } from "@/lib/client/hooks";
 import { useAppWallet } from "@/lib/client/wallet";
+import { Catalog } from "./Catalog";
 import { CashBox } from "./CashBox";
 import { Enforcement, Feed, Steps } from "./Landing";
 import { ReceiptList } from "./Receipt";
@@ -95,6 +96,7 @@ export default function App() {
               </div>
             ) : null}
             <Steps />
+            <Catalog config={config} />
             <Enforcement config={config} />
             <Feed config={config} receipts={feed.receipts} error={feed.error} />
           </>

@@ -6,6 +6,7 @@ import * as api from "@/lib/client/api";
 import { createPettyCash, revokePettyCash, signIn, type CreateStep } from "@/lib/client/chain";
 import { explainError } from "@/lib/client/errors";
 import { useAppWallet } from "@/lib/client/wallet";
+import { Catalog } from "./Catalog";
 import { Modal } from "./Modal";
 import { Countdown, ErrorNote, Spinner, fmtWhen } from "./ui";
 
@@ -65,6 +66,7 @@ export function CashBox({ config, state, selected, onSelect, onChanged, onSigned
         ) : null}
         {selected ? <p className="mt-2 text-xs text-muted">Revoke closes this petty cash right away. Any unspent money stays in your wallet; it never left.</p> : null}
         {msg ? <div className="mt-3"><ErrorNote>{msg}</ErrorNote></div> : null}
+        <Catalog config={config} compact />
         <details className="mt-4 text-xs text-muted">
           <summary>Technical details</summary>
           <dl className="mono mt-2 space-y-1 break-all">
@@ -85,6 +87,7 @@ export function CashBox({ config, state, selected, onSelect, onChanged, onSigned
   );
 }
 
+const perLabel = (secs?: number) => (!secs ? "per period" : secs === 86400 ? "per day" : secs === 604800 ? "per week" : secs % 3600 === 0 ? `every ${secs / 3600} hours` : `every ${Math.round(secs / 60)} minutes`);
 const peaks = new Map<string, bigint>();
 function Meter({ a, cluster, agent }: { a: Allowance; cluster: PublicConfig["cluster"]; agent: string }) {
   const rem = BigInt(a.remainingBase);
@@ -94,7 +97,7 @@ function Meter({ a, cluster, agent }: { a: Allowance; cluster: PublicConfig["clu
   return (
     <div className="mt-2" data-testid="cashbox">
       <div className="mono text-4xl font-semibold tracking-tight">{formatUsd(a.remainingBase)}</div>
-      <div className="text-sm text-muted">left to spend</div>
+      <div className="text-sm text-muted">{a.type === "recurring" && a.amountPerPeriodBase ? `left this period · ${formatUsd(a.amountPerPeriodBase)} ${perLabel(a.periodSecs)}` : "left"}</div>
       <div className="meter mt-3" role="img" aria-label={`${formatUsd(a.remainingBase)} left`}><div style={{ width: `${pct}%` }} /></div>
       <dl className="mt-4 space-y-2 text-sm">
         <div className="flex justify-between gap-3"><dt className="text-muted">Expires</dt><dd className="mono text-right">{a.expiryTs ? <>{fmtWhen(a.expiryTs)} · in <Countdown until={a.expiryTs * 1000} /></> : "Never"}</dd></div>
