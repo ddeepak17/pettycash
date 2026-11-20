@@ -2,8 +2,8 @@
 // against a local x402 seller that really settles transfers on that local chain. No real funds, no real sellers.
 // The local seller and the scripted "model" are test doubles; several of the seller's routes misbehave on purpose.
 //
-//   solana-test-validator --reset --clone-upgradeable-program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 \
-//     --url https://api.mainnet-beta.solana.com
+//   solana-test-validator --reset --limit-ledger-size 50000000 \
+//     --clone-upgradeable-program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 --url https://api.mainnet-beta.solana.com
 //   pnpm tsx scripts/rehearse-local.ts          (takes about three minutes: it waits for a real blockhash to expire)
 import { existsSync } from "node:fs";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
@@ -33,7 +33,7 @@ async function main() {
   const { purchase, settleUnresolved } = await import("../src/lib/agent/purchase");
   const { runAgent } = await import("../src/lib/agent/loop");
   const { proveOverspend, pull, readAllowance, ChainRefused, readAllowanceState } = await import("../src/lib/server/agentWallet");
-  const { blockhashExpired } = await import("../src/lib/server/rpc");
+  const { finalizedPast } = await import("../src/lib/server/rpc");
   const { setApproval, sql, closeStore, getPurchase } = await import("../src/lib/server/store");
 
   const network = CLUSTERS.devnet.network;
@@ -138,7 +138,7 @@ async function main() {
 
   // H. The agent loop with a scripted stand-in for the model.
   const local = (id: string, path: string, max: string) => ({
-    id, name: "Local seller", host: "127.0.0.1", kind: "search" as const, description: "local", params: [{ name: "query", description: "q", required: true, example: "x" }],
+    id, name: "Local seller", host: "127.0.0.1", kind: "search" as const, description: "local", summary: "local", params: [{ name: "query", description: "q", required: true, example: "x" }],
     payTo: sellerWallet.publicKey.toBase58(), lastPriceBase: "1000", maxPriceBase: max, timeoutMs: 20_000, build: (i: Record<string, string>) => ({ method: "GET" as const, url: `${seller.url}${path}?query=${encodeURIComponent(i.query)}` }),
   });
   const catalog = { sellers: [local("search", "/search", "5000"), local("pricey", "/pricey", "1000000")], reasoning: { name: "Local brain", host: "127.0.0.1", url: `${seller.url}/chat/completions`, payTo: sellerWallet.publicKey.toBase58(), maxPriceBase: "5000", timeoutMs: 20_000 } };
@@ -161,17 +161,17 @@ async function main() {
   const i1 = await purchase(ctx(false, 39_500n), target("/search?query=y"));
   record("I. errand budget stops a purchase the petty cash could afford", !i1.ok && i1.stage === "policy", i1.ok ? "" : i1.error);
 
-  // R2. Wait until the unsettled payments' blockhash has really expired on a finalized block, then run two
+  // R2. Wait until a finalized block is past the last height those payments could land at, then run two
   // reconcilers at once. Each of the three held amounts must return to the owner exactly once.
-  const blockhash = (await row(l2))!.pay_blockhash!;
+  const lastHeight = Number((await row(l2))!.pay_last_valid_height);
   let waited = 0;
-  while ((await blockhashExpired(blockhash)) !== true && waited < 200) { await sleep(5000); waited += 5; }
+  while ((await finalizedPast(lastHeight)) !== true && waited < 240) { await sleep(5000); waited += 5; }
   const second = await Promise.all([settleUnresolved(me), settleUnresolved(me)]);
   await sleep(1500);
   const third = await settleUnresolved(me);
   const refunds = second[0].refunded + second[1].refunded + third.refunded;
   const rowC = await row(cOut), rowL1 = await row(l1), rowL2 = await row(l2);
-  record("R2. after the blockhash expired, unsettled money returns to the owner exactly once (two reconcilers at once)",
+  record("R2. once the payments can no longer land, unsettled money returns to the owner exactly once (two reconcilers at once)",
     refunds === 3 && rowC?.status === "refunded" && rowL1?.status === "refunded" && rowL2?.status === "refunded" && rowL2.pay_sig === null && (await bal(agent.publicKey)) === 0n,
     `waited ${waited}s; refunds=${second[0].refunded}+${second[1].refunded}+${third.refunded}; agent=${await bal(agent.publicKey)}`);
   const expectedOwner = 10_000_000n - 1000n /*A*/ - 1000n /*B*/ - 1000n /*C2*/ - 20_000n /*E*/ - 6000n /*H*/;

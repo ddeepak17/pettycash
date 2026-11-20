@@ -12,7 +12,7 @@ University Blockchain Conference 2026 hackathon. Track: Agentic Payments and AI.
 
 ## Evidence
 
-Rows 1 to 6 are done and reproducible today. Rows 7 to 11 are pending and say so. Every row is explained in [docs/EVIDENCE.md](docs/EVIDENCE.md).
+Rows 1 to 6 and row 8 are done and reproducible today. The other rows are pending and say so. Every row is explained in [docs/EVIDENCE.md](docs/EVIDENCE.md).
 
 | # | Claim | Result | Where |
 |---|---|---|---|
@@ -23,10 +23,11 @@ Rows 1 to 6 are done and reproducible today. Rows 7 to 11 are pending and say so
 | 5 | The Stream filter reports what the chain recorded | Run in QuickNode's own sandbox on real mainnet blocks. Its token movements equal the balances `getTransaction` returns from a different RPC provider | [infra/quicknode/EVIDENCE.md](infra/quicknode/EVIDENCE.md) |
 | 6 | The Allowances program is in real use | 22 fixed and 3,621 recurring allowance accounts on mainnet on 2026-11-20 | `getProgramAccounts` by account size, see [docs/EVIDENCE.md](docs/EVIDENCE.md) |
 | 7 | A real paid purchase on Solana mainnet, real USDC | <!-- EVIDENCE:mainnet-purchase --> Pending: the pull and payment transaction signatures of one real purchase | |
-| 8 | A live Stream delivery verifies that purchase | <!-- EVIDENCE:stream-delivery --> Pending: the Stream id and the delivery that matched both transactions | |
+| 8 | The live Stream delivers real mainnet payments to our deployed webhook | Done 2026-11-20. Stream `3a8caced-b74c-4171-a26c-dcd8a462d482` ran for two minutes with its filter pointed at a busy x402 facilitator's key. Three real payments by other buyers arrived at `/api/quicknode` 0.8 to 1.9 seconds after their block, passed the signature check and were stored with their exact token movements. The filter was then set back to our agent's key and the Stream paused | [docs/evidence/2026-11-20-stream-live-delivery-test.jsonl](docs/evidence/2026-11-20-stream-live-delivery-test.jsonl) |
+| 8b | A live Stream delivery verifies our own purchase | <!-- EVIDENCE:stream-delivery --> Pending: the delivery that matched both transactions of a purchase by our agent | |
 | 9 | Solana refuses an over-limit pull on mainnet | <!-- EVIDENCE:overlimit-refusal --> Pending: the failed transaction signature showing error 300 | |
 | 10 | Revoke closes the petty cash and the agent can pull nothing | <!-- EVIDENCE:revoke --> Pending: the revoke transaction signature and the closed account | |
-| 11 | Public demo anyone can run without a wallet | <!-- EVIDENCE:deployed-url --> Pending: the deployed URL, the agent's address and the house petty cash account | |
+| 11 | Public demo anyone can run without a wallet | <!-- EVIDENCE:deployed-url --> The app is live at https://pettycash-pink.vercel.app on Solana mainnet. The agent's key is [`5SAtLdgB7VnhbTBJGjKs4HkYKNjPC4Dnhx6FLVu4Jtz9`](https://explorer.solana.com/address/5SAtLdgB7VnhbTBJGjKs4HkYKNjPC4Dnhx6FLVu4Jtz9). Pending: the funded house petty cash account | |
 
 ## What it does
 
@@ -193,7 +194,7 @@ The Stream is the only source that can mark a receipt verified. Its configuratio
 | Batching | `dataset_batch_size: 5` with elastic batching | QuickNode refuses a smaller batch for an open-ended mainnet stream. Elastic batching delivers blocks as soon as they exist |
 | Range | Starts at the chain tip, no end block | We need new transactions quickly, not history |
 | Region | `usa_east` | |
-| Lifecycle | Created paused. An errand moves the start to the current tip and activates it. It is paused again after 4 idle minutes | Billing is per processed block, so the Stream runs only while errands need it |
+| Lifecycle | Created paused. An errand moves the start to the current tip and activates it. It is paused again after about 2 idle minutes | Billing is per processed block, so the Stream runs only while errands need it |
 
 Why the Stream is a core data source and not decoration:
 
@@ -203,7 +204,7 @@ Why the Stream is a core data source and not decoration:
 - A disagreement is shown, not hidden. The receipt says "Mismatch" with the reason, for example a different recipient or amount.
 - If the Stream is not delivering, purchases still work and receipts stay at "Paid. Waiting for independent confirmation." They are never marked verified by another route.
 
-Done so far: the filter was run in QuickNode's sandbox against real mainnet blocks, for a USDC payment, an Allowances pull, a failed transaction and a block with no match. The numbers are in [infra/quicknode/EVIDENCE.md](infra/quicknode/EVIDENCE.md). The live Stream and its first delivery are row 8 of the evidence table, still pending.
+Done so far: the filter was run in QuickNode's sandbox against real mainnet blocks, for a USDC payment, an Allowances pull, a failed transaction and a block with no match. The numbers are in [infra/quicknode/EVIDENCE.md](infra/quicknode/EVIDENCE.md). The live Stream has delivered real mainnet payments to the deployed webhook (row 8 of the evidence table). Its first delivery of a purchase by our own agent is row 8b, still pending.
 
 ## What is enforced where
 

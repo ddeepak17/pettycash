@@ -32,8 +32,8 @@ export async function GET() {
       : null,
     streamActive,
     catalog: [
-      ...SELLERS.map((s) => ({ id: s.id, name: s.name, host: s.host, kind: s.kind, description: s.description, lastPriceBase: s.lastPriceBase, record: records[s.id] ?? { purchases: 0, delivered: 0 } })),
-      { id: REASONING_SELLER.id, name: REASONING_SELLER.name, host: REASONING_SELLER.host, kind: REASONING_SELLER.kind, description: REASONING_SELLER.description, lastPriceBase: REASONING_SELLER.lastPriceBase, record: records.reasoning ?? { purchases: 0, delivered: 0 } },
+      ...SELLERS.map((s) => ({ id: s.id, name: s.name, host: s.host, kind: s.kind, description: s.summary, lastPriceBase: s.lastPriceBase, record: records[s.id] ?? { purchases: 0, delivered: 0 } })),
+      { id: REASONING_SELLER.id, name: REASONING_SELLER.name, host: REASONING_SELLER.host, kind: REASONING_SELLER.kind, description: REASONING_SELLER.summary, lastPriceBase: "4000", record: records.reasoning ?? { purchases: 0, delivered: 0 } },
     ],
   };
   cached = { at: Date.now(), body: config };

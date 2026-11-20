@@ -154,8 +154,8 @@ export function RunTape({ run, cluster, onApprove, onCancel }: { run: RunState; 
         })}
         {live ? <Spinner label={run.items.length ? "Working" : "Starting the errand"} /> : null}
         {run.phase === "stopped" ? <p className="text-sm text-muted">Stopped. Anything already paid still has a receipt below.</p> : null}
-        {run.phase === "done" && run.finish ? (
-          <p className="mono text-xs text-muted">Done in {(run.finish.ms / 1000).toFixed(1)}s · {run.finish.purchases} {run.finish.purchases === 1 ? "purchase" : "purchases"} · {formatUsd(run.finish.spentBase)} spent</p>
+        {(run.phase === "done" || run.phase === "failed") && run.finish ? (
+          <p className="mono text-xs text-muted" data-testid="run-end">{run.phase === "done" ? "Done" : "Ended early"} in {(run.finish.ms / 1000).toFixed(1)}s · {run.finish.purchases} {run.finish.purchases === 1 ? "purchase" : "purchases"} · {formatUsd(run.finish.spentBase)} spent</p>
         ) : null}
       </div>
     </section>

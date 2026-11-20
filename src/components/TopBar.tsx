@@ -44,8 +44,8 @@ export function TopBar({ config }: { config: PublicConfig | null }) {
           ) : <span className="skeleton h-6 w-40" />}
           {config ? (
             <span className="mono flex items-center gap-1.5 text-xs text-muted" title="A QuickNode Stream watches the chain and checks every receipt.">
-              <span aria-hidden className={`h-2 w-2 rounded-full ${config.streamActive ? "bg-accent" : "bg-bad"}`} />
-              {config.streamActive ? "Stream live" : "Stream not delivering"}
+              <span aria-hidden className={`h-2 w-2 rounded-full ${config.streamActive ? "bg-accent" : "bg-muted"}`} />
+              {config.streamActive ? "Stream live" : "Stream resting until the next errand"}
             </span>
           ) : null}
           {w.status === "connected" && w.address ? (

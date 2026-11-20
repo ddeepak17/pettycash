@@ -1,8 +1,8 @@
 // Verifies our instruction builders against the MAINNET build of Solana's Subscriptions & Allowances program,
 // cloned into a local validator. No real funds: the token is a disposable local mint.
 //
-//   solana-test-validator --reset --clone-upgradeable-program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 \
-//     --url https://api.mainnet-beta.solana.com
+//   solana-test-validator --reset --limit-ledger-size 50000000 \
+//     --clone-upgradeable-program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 --url https://api.mainnet-beta.solana.com
 //   pnpm tsx scripts/verify-allowances-local.ts
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, sendAndConfirmTransaction, type Signer, type TransactionInstruction } from "@solana/web3.js";
 import { createMint, getAccount, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";

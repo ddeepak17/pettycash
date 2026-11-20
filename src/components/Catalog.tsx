@@ -2,8 +2,6 @@
 import { formatUsd } from "@/lib/solana/cluster";
 import type { PublicConfig } from "@/lib/types";
 
-const KIND: Record<string, string> = { search: "Web search", read: "Reads pages", data: "Market data", news: "News", image: "Makes images", reasoning: "The agent's own thinking" };
-
 function record(r: { purchases: number; delivered: number }) {
   return r.purchases > 0 ? `${r.delivered} of ${r.purchases} delivered` : "No purchases yet";
 }
@@ -32,7 +30,7 @@ export function Catalog({ config, compact }: { config: PublicConfig; compact?: b
               <div className="min-w-0"><h3 className="break-words font-semibold">{c.name}</h3><div className="mono break-all text-xs text-muted">{c.host}</div></div>
               <div className="mono shrink-0 font-semibold">{formatUsd(c.lastPriceBase)}</div>
             </div>
-            <p className="mt-2 text-sm">{KIND[c.kind] ?? c.kind}: {c.description}</p>
+            <p className="mt-2 text-sm">{c.description}{c.kind === "reasoning" ? " The price shown is typical for one step; each step is quoted separately." : ""}</p>
             <p className="mono mt-2 text-xs text-muted">{record(c.record)}</p>
           </li>
         ))}

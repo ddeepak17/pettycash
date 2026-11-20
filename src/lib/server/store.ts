@@ -50,7 +50,7 @@ export type PurchaseRow = {
   status: string; pull_sig: string | null; pay_sig: string | null; refund_sig: string | null; pay_memo: string | null; http_status: number | null;
   response_sha256: string | null; response_bytes: number | null; response_preview: string | null; error: string | null;
   unresolved_until: Date | null; created_at: Date; updated_at: Date; quote: unknown; policy: unknown;
-  pull_last_valid_height: string | number | null; pay_blockhash: string | null; settled_at: Date | null;
+  pull_last_valid_height: string | number | null; pay_blockhash: string | null; pay_last_valid_height: string | number | null; settled_at: Date | null;
   refund_try_sig: string | null; refund_try_height: string | number | null; attempts: number;
 };
 export async function insertPurchase(p: {
@@ -66,7 +66,7 @@ export async function insertPurchase(p: {
 export async function updatePurchase(id: string, patch: Partial<{
   status: string; pull_sig: string; pay_sig: string | null; refund_sig: string; pay_memo: string | null; http_status: number | null; response_sha256: string | null;
   response_bytes: number; response_preview: string; error: string | null; unresolved_until: Date | null;
-  pull_last_valid_height: number | null; pay_blockhash: string | null; settled_at: Date | null; refund_try_sig: string | null; refund_try_height: number | null;
+  pull_last_valid_height: number | null; pay_blockhash: string | null; pay_last_valid_height: number | null; settled_at: Date | null; refund_try_sig: string | null; refund_try_height: number | null;
 }>) {
   const entries = Object.entries(patch).filter(([, v]) => v !== undefined);
   if (!entries.length) return;
@@ -158,5 +158,14 @@ export async function getArtifact(purchaseId: string): Promise<{ contentType: st
 export async function claimRefund(id: string): Promise<boolean> {
   const rows = await sql()`update pettycash.purchases set status = 'refunding', refund_try_sig = null, refund_try_height = null, updated_at = now()
     where id = ${id} and status = 'refund_pending' and refund_sig is null returning id`;
+  return rows.length === 1;
+}
+
+/** Compare-and-set on a purchase's status. Returns true only for the one caller that made the change, so two
+ *  reconcilers looking at the same row can never both act on it. */
+export async function moveStatus(id: string, from: string, to: string, patch: Parameters<typeof updatePurchase>[1] = {}): Promise<boolean> {
+  const s = sql();
+  const fields = { ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)), status: to } as Record<string, unknown>;
+  const rows = await s`update pettycash.purchases set ${s(fields)}, updated_at = now() where id = ${id} and status = ${from} and refund_sig is null and settled_at is null returning id`;
   return rows.length === 1;
 }

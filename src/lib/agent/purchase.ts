@@ -16,8 +16,8 @@ import { buildPayment, getQuote, sendPayment, type Quote, type SellerRequest } f
 import type { RunEvent, SellerRef } from "../types";
 import { agentKeypair, agentPublicKey, cluster, network, usdcMint } from "../server/config";
 import { ChainRefused, pull, readAllowance, refund } from "../server/agentWallet";
-import { blockhashExpired, primaryRpcUrl, read, signatureOutcome, TransactionFailed } from "../server/rpc";
-import { claimRefund, getPurchase, insertPurchase, openPurchases, paySignatureTaken, saveArtifact, setRunStatus, touchPurchase, updatePurchase, waitForApproval, type PurchaseRow } from "../server/store";
+import { currentBlockHeight, finalizedPast, PAYMENT_VALID_BLOCKS, primaryRpcUrl, read, signatureOutcome, TransactionFailed } from "../server/rpc";
+import { claimRefund, getPurchase, insertPurchase, moveStatus, openPurchases, paySignatureTaken, saveArtifact, setRunStatus, touchPurchase, updatePurchase, waitForApproval, type PurchaseRow } from "../server/store";
 import { ata } from "../solana/allowances";
 import { decide, type PolicyDecision } from "./policy";
 
@@ -71,7 +71,7 @@ export function findImage(body: string): { contentType: string; bytes: Buffer } 
 }
 
 /** After a seller fails or goes quiet, how long before we even look for the payment. The decision itself never
- *  rests on time alone: money is only returned once the payment's blockhash has expired on a finalized block. */
+ *  rests on time alone: money is only returned once a finalized block is past the last height the payment could land at. */
 const GRACE_MS = Number(process.env.UNRESOLVED_GRACE_MS ?? 20_000);
 /** Rehearsals on a local validator may skip the wait for blockhash expiry. Never honoured on mainnet. */
 const trustWindowOnly = () => process.env.REHEARSAL_TRUST_WINDOW_ONLY === "1" && cluster() !== "mainnet-beta";
@@ -138,13 +138,20 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
     return failed("payment", `${built.error} Nothing was spent.`);
   }
   const payment = built.payment;
+  // The payment was built just now, so it cannot land after this block height. That is what later tells us,
+  // with certainty, when an unconfirmed payment is dead and the money may go back.
+  const payLastValidHeight = await currentBlockHeight().then((h) => h + PAYMENT_VALID_BLOCKS).catch(() => null);
+  if (payLastValidHeight === null) {
+    await updatePurchase(purchaseId, { status: "failed", error: "Solana could not be reached to prepare the payment." });
+    return failed("payment", "Solana could not be reached just now. Nothing was spent.");
+  }
 
   // 4. Pull exactly the price from the owner's wallet. Solana's Allowances program decides whether this is allowed.
   //    The pull's signature and the payment's memo are on record before the pull is broadcast.
   let pulled: { signature: string; slot: number; ms: number };
   try {
     pulled = await pull(live, amount, async (signature, lastValidBlockHeight) => {
-      await updatePurchase(purchaseId, { status: "pulling", pull_sig: signature, pull_last_valid_height: lastValidBlockHeight, pay_memo: payment.memo, pay_blockhash: payment.blockhash });
+      await updatePurchase(purchaseId, { status: "pulling", pull_sig: signature, pull_last_valid_height: lastValidBlockHeight, pay_memo: payment.memo, pay_blockhash: payment.blockhash, pay_last_valid_height: payLastValidHeight });
     });
   } catch (e) {
     if (e instanceof ChainRefused) {
@@ -216,19 +223,25 @@ async function isThePayment(signature: string, p: PurchaseRow): Promise<boolean 
 }
 
 /** Looks for this purchase's payment among the agent token account's transactions since the pull.
- *  Returns the signature, null when it is certain there is none yet, or "unknown" when the chain could not be read. */
+ *  Returns the signature, null when it is certain there is none, or "unknown" when the chain could not be read
+ *  far enough back. "Certain" means the history we read reaches the pull itself: if a node has pruned that far,
+ *  we do not guess. */
 async function findPaymentOnchain(p: PurchaseRow): Promise<string | null | "unknown"> {
   const candidates: string[] = [];
   if (p.pay_sig) candidates.push(p.pay_sig);
-  let complete = false;
+  let reachedPull = false;
   if (p.pay_memo && p.pull_sig) {
     const agentAta = ata(agentPublicKey(), new PublicKey(p.mint));
     let before: string | undefined;
-    for (let page = 0; page < 10 && !complete; page++) {
-      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 1000, before, until: p.pull_sig! }, "confirmed")).catch(() => null);
+    for (let page = 0; page < 10 && !reachedPull; page++) {
+      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 1000, before }, "confirmed")).catch(() => null);
       if (sigs === null) return "unknown";
-      for (const s of sigs) if (!s.err && memoMatches(s.memo, p.pay_memo) && !candidates.includes(s.signature)) candidates.push(s.signature);
-      if (sigs.length < 1000) complete = true; else before = sigs[sigs.length - 1].signature;
+      for (const s of sigs) {
+        if (s.signature === p.pull_sig) { reachedPull = true; break; }
+        if (!s.err && memoMatches(s.memo, p.pay_memo) && !candidates.includes(s.signature)) candidates.push(s.signature);
+      }
+      if (sigs.length < 1000) break;
+      before = sigs[sigs.length - 1].signature;
     }
   }
   for (const signature of candidates) {
@@ -237,22 +250,23 @@ async function findPaymentOnchain(p: PurchaseRow): Promise<string | null | "unkn
     if (match === "unknown") return "unknown";
     if (match) return signature;
   }
-  return complete ? null : "unknown";
+  return reachedPull ? null : "unknown";
 }
 
 /** Returns a purchase's money to its owner exactly once. The refund's signature is on record before it is broadcast,
  *  so an unconfirmed refund is looked up, never blindly repeated. */
 async function refundPurchase(p: Pick<PurchaseRow, "id" | "owner" | "amount_base">): Promise<string | null> {
-  if (!(await claimRefund(p.id))) return null;
+  if (!(await claimRefund(p.id))) { debug(p.id.slice(0, 8), "refund already claimed elsewhere"); return null; }
   try {
     const back = await refund(new PublicKey(p.owner), BigInt(p.amount_base), async (signature, lastValidBlockHeight) => {
       await updatePurchase(p.id, { refund_try_sig: signature, refund_try_height: lastValidBlockHeight });
     });
-    await updatePurchase(p.id, { status: "refunded", refund_sig: back.signature, unresolved_until: null });
+    await moveStatus(p.id, "refunding", "refunded", { refund_sig: back.signature, unresolved_until: null });
     return back.signature;
   } catch (e) {
+    debug(p.id.slice(0, 8), "refund did not confirm:", e instanceof Error ? e.message.slice(0, 200) : e);
     // Simulation failed or it failed onchain: nothing moved, so it is safe to try again later.
-    if (e instanceof TransactionFailed) await updatePurchase(p.id, { status: "refund_pending", refund_try_sig: null, refund_try_height: null }).catch(() => {});
+    if (e instanceof TransactionFailed) await moveStatus(p.id, "refunding", "refund_pending", { refund_try_sig: null, refund_try_height: null }).catch(() => {});
     // Otherwise the outcome is unknown: the row stays "refunding" with its signature, and is checked before any retry.
     return null;
   }
@@ -267,6 +281,8 @@ async function refundPurchase(p: Pick<PurchaseRow, "id" | "owner" | "amount_base
  *   refund_pending  the money must go back                         -> return it
  *   refunding       a refund was signed but never confirmed here   -> landed: done; failed or expired: try again
  */
+const debug = (...a: unknown[]) => { if (process.env.DEBUG_SETTLE === "1") console.log("[settle]", ...a); };
+
 export async function settleUnresolved(owner?: string): Promise<{ checked: number; refunded: number; foundPaid: number; stillOpen: number }> {
   const rows = await openPurchases(owner);
   let refunded = 0, foundPaid = 0, stillOpen = 0;
@@ -278,36 +294,36 @@ export async function settleUnresolved(owner?: string): Promise<{ checked: numbe
       if (p.status === "pulling") {
         if (sinceUpdate < 20_000) { stillOpen++; continue; } // a purchase is probably still in progress on another instance
         const outcome = await signatureOutcome(p.pull_sig!, p.pull_last_valid_height === null ? null : Number(p.pull_last_valid_height));
-        if (outcome === "landed") { await updatePurchase(p.id, { status: "refund_pending" }); if (await refundPurchase(p)) refunded++; else stillOpen++; }
-        else if (outcome === "failed" || outcome === "expired") await updatePurchase(p.id, { status: "failed", settled_at: new Date(), error: "The transfer from the wallet did not go through. Nothing was spent." });
+        if (outcome === "landed") { if (await moveStatus(p.id, "pulling", "refund_pending") && (await refundPurchase(p))) refunded++; else stillOpen++; }
+        else if (outcome === "failed" || outcome === "expired") await moveStatus(p.id, "pulling", "failed", { settled_at: new Date(), error: "The transfer from the wallet did not go through. Nothing was spent." });
         else { await touchPurchase(p.id); stillOpen++; }
       } else if (p.status === "pulled") {
-        await updatePurchase(p.id, { status: "refund_pending" });
-        if (await refundPurchase(p)) refunded++; else stillOpen++;
+        if (await moveStatus(p.id, "pulled", "refund_pending") && (await refundPurchase(p))) refunded++; else stillOpen++;
       } else if (p.status === "paying" || p.status === "delivered" || p.status === "paid") {
         if (p.status === "paying" && waiting) { stillOpen++; continue; } // the seller may still be answering
         const found = await findPaymentOnchain(p);
+        debug(p.id.slice(0, 8), p.status, "found:", found, "waiting:", waiting, "lastValid:", p.pay_last_valid_height);
         if (found === "unknown") { await touchPurchase(p.id); stillOpen++; continue; }
         if (found) {
-          await updatePurchase(p.id, { pay_sig: found, settled_at: new Date(), unresolved_until: null, status: p.status === "paying" ? "paid" : p.status,
-            ...(p.status === "paying" ? { error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` } : {}) });
-          foundPaid++;
+          if (await moveStatus(p.id, p.status, p.status === "paying" ? "paid" : p.status, { pay_sig: found, settled_at: new Date(), unresolved_until: null,
+            ...(p.status === "paying" ? { error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` } : {}) })) foundPaid++;
           continue;
         }
         // No payment onchain yet. Money goes back only when the signed payment can never land any more.
-        const expired = trustWindowOnly() ? true : p.pay_blockhash ? await blockhashExpired(p.pay_blockhash) : null;
+        const expired = trustWindowOnly() ? true : p.pay_last_valid_height === null ? null : await finalizedPast(Number(p.pay_last_valid_height));
+        debug(p.id.slice(0, 8), "expired:", expired);
         if (expired === true && !waiting) {
-          await updatePurchase(p.id, { status: "refund_pending", pay_sig: null });
-          if (await refundPurchase(p)) refunded++; else stillOpen++;
+          // Compare-and-set: only the reconciler that moves the row out of its current state goes on to refund it.
+          if (await moveStatus(p.id, p.status, "refund_pending", { pay_sig: null }) && (await refundPurchase(p))) refunded++; else stillOpen++;
         } else { await touchPurchase(p.id); stillOpen++; }
       } else if (p.status === "refund_pending") {
         if (await refundPurchase(p)) refunded++; else stillOpen++;
       } else if (p.status === "refunding") {
         if (sinceUpdate < 45_000) { stillOpen++; continue; } // someone is sending it right now
-        if (!p.refund_try_sig) { await updatePurchase(p.id, { status: "refund_pending" }); stillOpen++; continue; }
+        if (!p.refund_try_sig) { await moveStatus(p.id, "refunding", "refund_pending"); stillOpen++; continue; }
         const outcome = await signatureOutcome(p.refund_try_sig, p.refund_try_height === null ? null : Number(p.refund_try_height));
-        if (outcome === "landed") { await updatePurchase(p.id, { status: "refunded", refund_sig: p.refund_try_sig, unresolved_until: null }); refunded++; }
-        else if (outcome === "failed" || outcome === "expired") { await updatePurchase(p.id, { status: "refund_pending", refund_try_sig: null, refund_try_height: null }); stillOpen++; }
+        if (outcome === "landed") { if (await moveStatus(p.id, "refunding", "refunded", { refund_sig: p.refund_try_sig, unresolved_until: null })) refunded++; }
+        else if (outcome === "failed" || outcome === "expired") { await moveStatus(p.id, "refunding", "refund_pending", { refund_try_sig: null, refund_try_height: null }); stillOpen++; }
         else { await touchPurchase(p.id); stillOpen++; }
       }
     } catch (e) {

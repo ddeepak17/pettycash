@@ -79,7 +79,7 @@ export default function App() {
                 <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
                   Set aside a small budget and let an agent run an errand. It pays real companies a fraction of a cent at a time, and Solana itself makes sure it can never spend more than you set aside.
                 </p>
-                <p className="mt-3 max-w-xl text-sm text-muted">Never holds your money. Every receipt checked independently.</p>
+                <p className="mt-3 max-w-xl text-sm text-muted">The agent holds only the price of one purchase, for a few seconds. Every receipt is checked independently.</p>
               </div>
               <div className="sheet h-fit p-5 sm:p-6">
                 {config.house ? (

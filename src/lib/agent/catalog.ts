@@ -10,7 +10,10 @@ export type Seller = {
   name: string;
   host: string;
   kind: "search" | "read" | "data" | "news" | "image" | "reasoning";
+  /** Written for the model: when to use the tool. */
   description: string;
+  /** Written for people: what the seller sells, in a few words. */
+  summary: string;
   params: ToolParam[];
   /** Pinned recipient wallet for this seller on Solana mainnet. */
   payTo: string;
@@ -36,6 +39,7 @@ export const SELLERS: Seller[] = [
     name: "Minifetch",
     host: "minifetch.com",
     kind: "search",
+    summary: "Keyword web search with titles, links and snippets.",
     description: "Keyword web search. Returns ranked results with title, URL and a text snippet. Best first step for anything that needs current information from the web.",
     params: [{ name: "query", description: "What to search for, as a few keywords", required: true, example: "best tacos near UT Austin" }],
     payTo: "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
@@ -49,6 +53,7 @@ export const SELLERS: Seller[] = [
     name: "Minifetch",
     host: "minifetch.com",
     kind: "read",
+    summary: "Reads one web page and returns its text.",
     description: "Reads one web page and returns its text as clean markdown. Use it on a URL from a search result when the snippet is not enough.",
     params: [{ name: "url", description: "The full https URL of the page to read", required: true, example: "https://solana.com/news" }],
     payTo: "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
@@ -62,6 +67,7 @@ export const SELLERS: Seller[] = [
     name: "Exa",
     host: "api.exa.ai",
     kind: "search",
+    summary: "Higher quality semantic web search.",
     description: "Higher quality semantic web search by Exa. Costs more than web_search; use it only when web_search results were poor or the question needs precise sources.",
     params: [{ name: "query", description: "A natural-language description of what you are looking for", required: true, example: "official announcement of Solana Subscriptions and Allowances program" }],
     payTo: "12Ec2cJmfR1C9uwejzxcuMhUgEC7wDrLgm1wBvvR5w9E",
@@ -75,6 +81,7 @@ export const SELLERS: Seller[] = [
     name: "Agent Data Tools",
     host: "agent-data-tools.revmesh2074.workers.dev",
     kind: "data",
+    summary: "Current weather and a 48-hour forecast for any city.",
     description: "Weather for any city: current conditions and an hourly forecast up to 48 hours ahead (MET Norway data).",
     params: [{ name: "city", description: "City name", required: true, example: "Austin" }],
     payTo: "82wfSCZhCmZA7zwqqt6Q3FG8nqYBwUvbThP6M97fa9Q6",
@@ -88,6 +95,7 @@ export const SELLERS: Seller[] = [
     name: "Otto AI",
     host: "x402.ottoai.services",
     kind: "news",
+    summary: "Today's crypto headlines with sources.",
     description: "Today's most important crypto headlines with source links and publish times, plus a short market brief. Takes no input.",
     params: [],
     payTo: "6XcSfqJHr9vNW2vbiRaMqUYVm7shDgLepca54wUTDPN5",
@@ -101,6 +109,7 @@ export const SELLERS: Seller[] = [
     name: "x402engine",
     host: "x402engine.app",
     kind: "data",
+    summary: "Live cryptocurrency prices with 24-hour change.",
     description: "Live prices for cryptocurrencies with 24-hour change. Ids are CoinGecko ids such as solana, bitcoin, ethereum, usd-coin.",
     params: [{ name: "ids", description: "Comma-separated coin ids", required: true, example: "solana,bitcoin" }],
     payTo: "Gzehfseq1k9AcHFSoV7qHmDGQx92nLMw78XXdqVWQQWa",
@@ -114,6 +123,7 @@ export const SELLERS: Seller[] = [
     name: "2s.io",
     host: "2s.io",
     kind: "news",
+    summary: "Recent news about a US-listed company.",
     description: "Recent news about a US-listed company, by stock ticker, from the last 14 days.",
     params: [{ name: "ticker", description: "Stock ticker symbol", required: true, example: "NVDA" }],
     payTo: "TW6ntaGzvj63ZgPjszd4FCGmVTGfzv1MAYZbjYcyWhn",
@@ -127,6 +137,7 @@ export const SELLERS: Seller[] = [
     name: "CoinGecko",
     host: "pro-api.coingecko.com",
     kind: "data",
+    summary: "Onchain DEX pool prices, liquidity and volume.",
     description: "Search onchain DEX pools and tokens by name, symbol or contract address. Returns pool prices, liquidity and volume.",
     params: [
       { name: "query", description: "Token name, symbol or contract address", required: true, example: "jup" },
@@ -143,6 +154,7 @@ export const SELLERS: Seller[] = [
     name: "agent402",
     host: "agent402.tools",
     kind: "image",
+    summary: "One generated image. The agent always asks you first.",
     description: "Generates one 1024x1024 image from a text prompt. Expensive compared with the other tools, so a person is always asked first.",
     params: [{ name: "prompt", description: "What the image should show", required: true, example: "A paper receipt folded into an origami bird, studio light" }],
     payTo: "J7aN3PLJnTCF5qpEnvJHJsnCjcGuqC2rYtEM8Gv3xwg",
@@ -160,6 +172,7 @@ export const REASONING_SELLER = {
   host: "sol.blockrun.ai",
   kind: "reasoning" as const,
   description: "The agent's own reasoning, bought per request.",
+  summary: "The agent's own thinking, bought one step at a time from a model provider.",
   url: "https://sol.blockrun.ai/api/v1/chat/completions",
   payTo: "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
   lastPriceBase: "1000",

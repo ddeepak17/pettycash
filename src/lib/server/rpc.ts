@@ -99,12 +99,14 @@ export async function signatureOutcome(signature: string, lastValidBlockHeight: 
   }
 }
 
-/** True only when the chain says this blockhash can no longer be used, so a transaction built on it can never land. */
-export async function blockhashExpired(blockhash: string): Promise<boolean | null> {
-  try {
-    const r = await read((c) => c.isBlockhashValid(blockhash, { commitment: "finalized" }));
-    return r.value === false;
-  } catch {
-    return null;
-  }
+/** A blockhash is usable for 150 blocks after it was produced. A transaction built now therefore cannot land after
+ *  this height, whatever blockhash it used (a blockhash cannot come from the future). The default doubles the 150
+ *  blocks, so a seller-supplied blockhash from a node slightly ahead of ours is still covered. */
+export const PAYMENT_VALID_BLOCKS = Number(process.env.PAYMENT_VALID_BLOCKS ?? 300);
+export const currentBlockHeight = () => read((c) => c.getBlockHeight("confirmed"));
+
+/** True only when a FINALIZED block is past the height. Asking "is this blockhash valid?" is not enough: a blockhash
+ *  that is too new to be finalized gets the same answer as one that has expired. */
+export async function finalizedPast(height: number): Promise<boolean | null> {
+  try { return (await read((c) => c.getBlockHeight("finalized"))) > height; } catch { return null; }
 }
