@@ -1,0 +1,40 @@
+{
+  "scene": "house",
+  "baseUrl": "https://pettycash-pink.vercel.app",
+  "mock": false,
+  "clicks": [
+    {
+      "at": 9735,
+      "what": "click: chip: What is the weather in Austin today and tomorrow, and do I need a jacket?"
+    }
+  ],
+  "notes": [
+    "9735ms click: chip: What is the weather in Austin today and tomorrow, and do I need a jacket?",
+    "27239ms run ended after 17s",
+    "33282ms Verified stamp seen; holding 4s"
+  ],
+  "verifiedStampSeen": true,
+  "explorerLinks": [
+    "https://explorer.solana.com/tx/5gxjWTYGJe6zkxQxtdpgpUNFHAh9qDU5Xvbngyro4XnjnLdUZaLsQSL4E9nz8KLPmfmDAHQEmjL3FvfKHbnZ4RW4",
+    "https://explorer.solana.com/tx/3S4wGykHNcHrbqy5GHxuq4sSNQzPHKoyCntJybLhACfRUjd3SKEonaZon4QJbbCqpe2hXDUfiyx7UgTM1zdJ1yFs",
+    "https://explorer.solana.com/tx/zmXb8pewnWSFjor3oMvLRoxwXsiLsZVEH9B1Akmdbdv4pKrT5Yd36mt1FhNjVrzND6RQ8C4NYtt19WMzu9vdJF7",
+    "https://explorer.solana.com/tx/5CFGqDZKp4HAJZbn7fsLeDrQYezTbegRUqu499SauBwJVzxFmQ8pLU1xhwdutduPEVpbJSQ1KZyPeojYR8Z1j1Mu",
+    "https://explorer.solana.com/tx/2R64a9NDVaqe5ikptENTrZjBMeCCpzxyHuKKMy5AY2AwEaRm4j4A8Ayi4fdsTvWdfYrwSKBfFqZcEmQxYM3nb2qa",
+    "https://explorer.solana.com/tx/5tmrZpCeVoUXzLzrotExNENovZgSGqKViDvMY9NVa4F9931sHLjwBUsa14qrESUdvarBhge8UdrjoMgWw9Cizj8u",
+    "https://explorer.solana.com/tx/2j7dMiHHo6d1T7mLgy8Cm2ZgC3nN9kd5p3YEHg4rF9tm4tYUQgvguL2R6o8QyRmc1B6pL2iCRuCse8jHSSSJDx5F",
+    "https://explorer.solana.com/tx/3hj3g8tQixecp3WG7cABTjneFGvVEhxREigExqMiucDHWoL8aEDK59nFdfeMwF4MPwviMyBT2gRRqMKf7idk9Yus",
+    "https://explorer.solana.com/tx/5MH3xCB1WPNCM34X6BxZeXYiCKagpmzVxiqPTHc56YcA8hbCzx2uD17mxMfSifgQ2jWN9rKs8sbkEMahoh2FvVL4",
+    "https://explorer.solana.com/tx/4dWXm3bpK1cVrCm1ymE2GrPHsMqcwetBdPeLgUvjVEG1B1QUd4ixCTnXuz6p8hAc32HUNJoGSYqZdrRbzzHP7NEN",
+    "https://explorer.solana.com/tx/CARXCWLJSMEQR3PVo5dao7eVEPa3GPkEUvvXGJRL6s1kK6LU7iB11jUS2ycZzctuHKHPG28SQNnHHz4uu63NpuT",
+    "https://explorer.solana.com/tx/3yxs6GchzP4KQtiQEJakAUNKjySQoagCFKDEwXrc5JCGTpZXm4RMVcThoBqVHBTE8wPkKWhHV3Xmmi9szXNuMw9S",
+    "https://explorer.solana.com/tx/2EfjbW5Loe7ZeTnu9F97xZVgeVUxb6skbhnuEQ1UcvobWX3XftuKcrz4VosbotYDv1WtTVUbh9yxVdidPw5UAjcW",
+    "https://explorer.solana.com/tx/2SA2WQmNfFGHzQ4A6RnxKrm22FR7jJhYKGmuiEWeQUSs7ZYhPgmcxroR9CBkxPCJCkTSmNeM812e9qLeu5QgKCDi",
+    "https://explorer.solana.com/tx/422c43P8ng8kMdX4yXWwjzdH5XmmCXiLM66Yydj2D8zQmUEU1dUfGHSziNaGf18zanS1jhVmWZ3pGK7pNggA1eCg",
+    "https://explorer.solana.com/tx/3FTJUvL85CvqJPDDK2YtxLuMASrPZcQ4M3DBN6DLJQ7R4ASpzT1Zs8TJtoWkj3roaivQBb2hjNuefTSjNpJFXLDq",
+    "https://explorer.solana.com/tx/28az2i3Qtns6hTp2kCrD9XHz8v6TPy1221rpokScz6TPtC72eeHAc5DTKotvbqsaqwwJxPs3EY1C59zsfvjcnbsr",
+    "https://explorer.solana.com/tx/5sK1MsRagjZP63AXKeYMERkh3VkGGu7LDSDCezAuPfz18NrRu1B3v6q9EDhTYMhnySB42iKhJRVwtMCmGH3hH82C"
+  ],
+  "consoleErrors": [],
+  "failure": null,
+  "approxDurationSeconds": 40
+}

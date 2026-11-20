@@ -1,0 +1,12 @@
+{
+  "mode": "wallet",
+  "base": "https://pettycash-pink.vercel.app",
+  "task": "Make an image of a paper receipt folded into an origami bird.",
+  "result": {},
+  "consoleErrors": [],
+  "log": [
+    "2026-11-20T10:31:43.375Z FAILED: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"https://pettycash-pink.vercel.app/\", waiting until \"networkidle\"\u001b[22m\n",
+    "2026-11-20T10:31:43.653Z screenshot qa/journey-wallet-2026-11-20T10-31-12-331Z/01-failure.png",
+    "2026-11-20T10:31:43.654Z console errors: 0"
+  ]
+}

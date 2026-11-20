@@ -11,7 +11,9 @@ function db(): Sql {
   if (!holder.__pettycashStreamSql) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not set");
-    holder.__pettycashStreamSql = postgres(url, { prepare: false, max: 1 });
+    // idle_timeout matters on serverless: an instance can be frozen between requests, and a query sent down a
+    // connection that died meanwhile would hang. Idle connections are closed after 20 seconds and reopened on demand.
+    holder.__pettycashStreamSql = postgres(url, { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 15, max_lifetime: 300, onnotice: () => {} });
   }
   return holder.__pettycashStreamSql;
 }

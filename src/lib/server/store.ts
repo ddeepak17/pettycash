@@ -7,7 +7,7 @@ import { cluster, databaseUrl } from "./config";
 
 let client: ReturnType<typeof postgres> | null = null;
 export const sql = () => {
-  if (!client) client = postgres(databaseUrl(), { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 15, onnotice: () => {} });
+  if (!client) client = postgres(databaseUrl(), { prepare: false, max: 3, idle_timeout: 20, connect_timeout: 15, max_lifetime: 300, onnotice: () => {} });
   return client;
 };
 export const closeStore = async () => { if (client) { await client.end({ timeout: 2 }); client = null; } };
@@ -184,4 +184,9 @@ export async function moveStatus(id: string, from: string, to: string, patch: Pa
   const fields = { ...Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)), status: to } as Record<string, unknown>;
   const rows = await s`update pettycash.purchases set ${s(fields)}, updated_at = now() where id = ${id} and status = ${from} and refund_sig is null and settled_at is null returning id`;
   return rows.length === 1;
+}
+
+/** Gives up on a slow dependency instead of letting a page hang on it. */
+export function within<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([promise, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))]);
 }

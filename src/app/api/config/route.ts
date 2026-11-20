@@ -3,7 +3,7 @@ import { json } from "@/lib/server/auth";
 import { SELLERS, REASONING_SELLER } from "@/lib/agent/catalog";
 import { readAllowance } from "@/lib/server/agentWallet";
 import { agentPublicKey, cluster, house, limits, network, usdcMint } from "@/lib/server/config";
-import { sellerRecords } from "@/lib/server/store";
+import { sellerRecords, within } from "@/lib/server/store";
 import { streamIsActive } from "@/lib/server/streamHooks";
 import { ALLOWANCES_PROGRAM_ID } from "@/lib/solana/allowances";
 import type { PublicConfig } from "@/lib/types";
@@ -18,10 +18,11 @@ export async function GET() {
   if (cached && Date.now() - cached.at < 4000) return json(cached.body);
   const l = limits();
   const h = house();
+  const noRecords = {} as Record<string, { purchases: number; delivered: number }>;
   const [live, records, streamActive] = await Promise.all([
-    h ? readAllowance(h.delegation).catch(() => null) : Promise.resolve(null),
-    sellerRecords().catch(() => ({} as Record<string, { purchases: number; delivered: number }>)),
-    streamIsActive().catch(() => false),
+    h ? within(readAllowance(h.delegation).catch(() => null), 8000, null) : Promise.resolve(null),
+    within(sellerRecords().catch(() => noRecords), 5000, noRecords),
+    within(streamIsActive().catch(() => false), 5000, false),
   ]);
   const config: PublicConfig = {
     cluster: cluster(), network: network(), rpcUrl: "/api/rpc", usdcMint: usdcMint().toBase58(), agent: agentPublicKey().toBase58(),
