@@ -1,5 +1,5 @@
 "use client";
-import { formatUsd } from "@/lib/solana/cluster";
+import { explorerAddress, formatUsd } from "@/lib/solana/cluster";
 import type { PublicConfig, Receipt } from "@/lib/types";
 import { ReceiptList } from "./Receipt";
 
@@ -62,6 +62,28 @@ export function Feed({ config, receipts, error }: { config: PublicConfig; receip
       <h2 id="feed" className="text-2xl font-semibold tracking-tight">Recent receipts from the house petty cash</h2>
       <p className="mt-2 max-w-2xl text-muted">Real purchases by people trying it. Each is stamped only after the independent check.</p>
       <div className="mt-5 max-w-2xl"><ReceiptList receipts={receipts} error={error} cluster={config.cluster} empty="No receipts yet. Run an errand above and yours will be the first." /></div>
+    </section>
+  );
+}
+
+export function CheckItYourself({ config }: { config: PublicConfig }) {
+  const items: [string, string, string][] = [
+    ["The agent's key", config.agent, "See every payment the agent has made and that it holds only the price of one purchase at a time."],
+    ["The allowance program", config.allowancesProgram, "The audited Solana program that enforces the limit. Anyone can read it; we cannot change it."],
+  ];
+  if (config.house) items.push(["The house petty cash", config.house.delegation, "The public demo budget. Its remaining amount and expiry are readable by anyone."]);
+  return (
+    <section aria-labelledby="check" className="mt-16">
+      <h2 id="check" className="text-2xl font-semibold tracking-tight">Check it yourself</h2>
+      <ul className="mt-4 max-w-2xl divide-y divide-dashed divide-rule border-y border-dashed border-rule">
+        {items.map(([name, addr, why]) => (
+          <li key={name} className="py-3 text-sm">
+            <a className="font-semibold underline underline-offset-2" target="_blank" rel="noopener noreferrer" href={explorerAddress(addr, config.cluster)}>{name} on Solana Explorer ↗</a>
+            <div className="mono break-all text-xs text-muted">{addr}</div>
+            <p className="mt-1 text-muted">{why}</p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

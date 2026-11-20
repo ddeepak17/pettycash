@@ -135,11 +135,14 @@ function NewCash({ open, onClose, config, state, onDone, onSignedIn }: { open: b
   const balance = BigInt(state.usdcBalanceBase);
   const sol = BigInt(state.solLamports);
   const expiryTs = Math.floor(Date.now() / 1000) + hours * 3600;
-  let problem: string | null = null;
-  if (balance === 0n) problem = "This wallet has no USDC. Add some USDC first, then come back.";
-  else if (sol < 10_000n) problem = "This wallet has no SOL for the network fee. Add a small amount of SOL (about $1 is plenty), then come back.";
-  else if (base === null || base === 0n) problem = "Enter an amount like 1.00.";
-  else if (base > balance) problem = `That is more than the ${formatUsd(balance)} USDC in this wallet.`;
+  const missing: string[] = [];
+  if (balance === BigInt(0)) missing.push("This wallet has no USDC. Send some USDC to this wallet address first (a few dollars is plenty), then reopen this window.");
+  if (sol < BigInt(10_000)) missing.push("This wallet has no SOL for the network fee. Send a small amount of SOL (about $1 is plenty), then reopen this window.");
+  if (!missing.length) {
+    if (base === null || base === BigInt(0)) missing.push("Enter an amount like 1.00.");
+    else if (base > balance) missing.push(`That is more than the ${formatUsd(balance)} USDC in this wallet.`);
+  }
+  const problem = missing.length ? missing.join(" ") : null;
   const busy = step !== null && step !== "done";
   const go = async () => {
     if (!base || problem) return;
@@ -153,7 +156,7 @@ function NewCash({ open, onClose, config, state, onDone, onSignedIn }: { open: b
   const when = new Date(expiryTs * 1000).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit" });
   return (
     <Modal open={open} onClose={() => (busy ? undefined : onClose())} title="New petty cash">
-      <div className="space-y-4">
+      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void go(); }}>
         <p className="text-sm text-muted">{config.cluster === "mainnet-beta" ? "This is real USDC." : "This is test money."} You keep the money in your wallet. You are only setting a limit on what the agent may pull.</p>
         <div>
           <label htmlFor="amt" className="text-sm font-semibold">Amount in USDC</label>
@@ -177,14 +180,14 @@ function NewCash({ open, onClose, config, state, onDone, onSignedIn }: { open: b
           </ol>
           <p className="mt-2 text-xs text-muted">Before your first errand you will also sign in with a message. That is free and is not a transaction.</p>
         </div>
-        {problem ? <p role="alert" className="text-sm text-bad">{problem}</p> : null}
+        {missing.length ? <div role="alert" className="space-y-1 text-sm text-bad">{missing.map((m) => <p key={m}>{m}</p>)}</div> : null}
         {err ? <ErrorNote>{err}</ErrorNote> : null}
         {busy ? <Spinner label={step === "setup" ? "Waiting for the one-time setup. Approve it in your wallet." : "Waiting for your approval in the wallet."} /> : null}
         <div className="flex gap-3">
-          <button className="btn btn-primary" onClick={go} disabled={busy || !!problem}>{err ? "Try again" : "Continue to wallet"}</button>
-          <button className="btn" onClick={onClose} disabled={busy}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={busy || !!problem}>{err ? "Try again" : "Continue to wallet"}</button>
+          <button type="button" className="btn" onClick={onClose} disabled={busy}>Cancel</button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 }

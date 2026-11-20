@@ -192,6 +192,11 @@ const seedFeed = (): Receipt[] => {
     mk(1, seller("Northwind Search", "search.northwind.example", "/q"), "5000", 90_000),
     mk(2, seller("Lakeshore Reader", "read.lakeshore.example", "/read"), "20000", 200_000),
     mk(3, seller("Meridian Market Data", "data.meridian.example", "/series"), "40000", 700_000),
+    { ...mk(4, seller("Harbor Images", "images.harbor.example", "/img"), "30000", 900_000), verified: false, status: "refunded", refundSignature: sig(77) },
+    { ...mk(5, seller("Lakeshore Reader", "read.lakeshore.example", "/read"), "20000", 1_200_000), verified: false, status: "paid", responseBytes: null },
+    { ...mk(6, seller("Northwind Search", "search.northwind.example", "/q"), "5000", 1_500_000), verified: false, status: "failed" },
+    { ...mk(7, seller("Meridian Market Data", "data.meridian.example", "/series"), "40000", 1_800_000), verified: false, mismatch: "The Stream saw $0.05 leave the wallet, but the seller quoted $0.04." },
+    { ...mk(8, seller("Cobalt Reasoning", "think.cobalt.example", "/v1/step"), "4000", 2_000_000), kind: "reasoning" as const },
   ];
 };
 export const mockReceipts = (owner: string, house: boolean): Receipt[] => {

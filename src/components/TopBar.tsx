@@ -64,7 +64,17 @@ export function TopBar({ config }: { config: PublicConfig | null }) {
         <p className="text-sm text-muted">Connecting only shares your public address. It does not move money.</p>
         {err ? <div className="mt-3"><ErrorNote>{err}</ErrorNote></div> : null}
         <ul className="mt-4 space-y-2">
-          {w.options.length === 0 ? <li className="text-sm">No wallet found in this browser. Install Phantom, Solflare or Backpack, then reload.</li> : null}
+          {w.options.length === 0 ? (
+            <li className="space-y-2 text-sm">
+              <p><strong>No wallet found in this browser.</strong></p>
+              <p>A wallet is a browser extension that holds your money and asks before anything is spent. To use your own petty cash:</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>Install one of <a className="underline" target="_blank" rel="noopener noreferrer" href="https://phantom.com/download">Phantom</a>, <a className="underline" target="_blank" rel="noopener noreferrer" href="https://solflare.com/download">Solflare</a> or <a className="underline" target="_blank" rel="noopener noreferrer" href="https://backpack.app/download">Backpack</a>.</li>
+                <li>Reload this page and choose Connect wallet again.</li>
+              </ol>
+              <p className="text-muted">You can still look around without a wallet.</p>
+            </li>
+          ) : null}
           {w.options.map((o) => (
             <li key={o.name}>
               <button

@@ -1,10 +1,11 @@
 "use client";
+import type React from "react";
 import { explorerTx, formatUsd, shortAddress } from "@/lib/solana/cluster";
 import type { Cluster, Receipt } from "@/lib/types";
 import { useNow } from "@/lib/client/hooks";
 import { Spinner, Stamp, ago } from "./ui";
 
-export function VerifyState({ r }: { r: Receipt }) {
+export function VerifyState({ r, cluster }: { r: Receipt; cluster: Cluster }) {
   if (r.mismatch) {
     return (
       <div role="alert" className="mt-3 rounded border-2 border-bad bg-[var(--bad-bg)] p-3 text-sm text-bad">
@@ -15,18 +16,27 @@ export function VerifyState({ r }: { r: Receipt }) {
       </div>
     );
   }
-  if (r.verified) {
-    return (
-      <div className="mt-3 flex items-center gap-3">
-        <Stamp sub="independently checked" fresh>Verified</Stamp>
-        <span className="text-xs text-muted">Verified by QuickNode Streams. The Stream&apos;s own data matches the seller&apos;s quote.</span>
-      </div>
-    );
+  const stamp = r.verified ? (
+    <div className="mt-3 flex items-center gap-3">
+      <Stamp sub="independently checked" fresh>Verified</Stamp>
+      <span className="text-xs text-muted">Verified by QuickNode Streams. The Stream&apos;s own data matches the seller&apos;s quote.</span>
+    </div>
+  ) : null;
+  const note = (tone: "bad" | "muted", title: string, body?: React.ReactNode) => (
+    <div className={`mt-3 rounded border p-3 text-sm ${tone === "bad" ? "border-bad bg-[var(--bad-bg)] text-bad" : "border-rule bg-paper"}`}>
+      <strong>{title}</strong>{body ? <div className="mt-1">{body}</div> : null}
+    </div>
+  );
+  if (r.status === "refunded") {
+    return (<>{note("muted", "Money returned to the wallet", r.refundSignature ? <a className="underline" target="_blank" rel="noopener noreferrer" href={explorerTx(r.refundSignature, cluster)}>View the refund on Solana ↗</a> : "The refund was sent.")}{stamp}</>);
   }
-  if (r.status === "failed" || r.status === "denied" || r.status === "refunded") {
-    return <p className="mt-3 text-sm text-muted">{r.status === "refunded" ? "Refunded. The money went back to the wallet." : r.status === "denied" ? "Not bought. No money moved." : "The purchase failed."}</p>;
-  }
+  if (r.status === "failed") return (<>{note("bad", "Did not complete", "The purchase did not go through. Check the transactions below to see whether any money moved.")}{stamp}</>);
+  if (r.status === "denied") return note("muted", "Not bought", "No money moved.");
   if (r.status === "awaiting_approval") return <p className="mt-3 text-sm text-muted">Waiting for your approval.</p>;
+  if (r.status === "paid" && Date.now() - r.createdAt > 120_000) {
+    return (<>{note("bad", "The seller was paid and did not deliver", "The payment went through but nothing came back.")}{stamp}</>);
+  }
+  if (stamp) return stamp;
   return (
     <p className="mt-3 flex items-center gap-2 text-sm text-muted">
       <span aria-hidden className="pulse inline-block h-2 w-2 rounded-full bg-accent" />
@@ -49,7 +59,7 @@ export function ReceiptCard({ r, cluster, showWallet }: { r: Receipt; cluster: C
             </div>
             <div className="mono shrink-0 text-lg font-semibold">{formatUsd(r.amountBase)}</div>
           </div>
-          <VerifyState r={r} />
+          <VerifyState r={r} cluster={cluster} />
           <div className="perf mt-3 flex flex-wrap gap-x-5 gap-y-1 pt-3 text-xs">
             {r.pullSignature ? <a className="underline underline-offset-2" target="_blank" rel="noopener noreferrer" href={explorerTx(r.pullSignature, cluster)}>Money moved from wallet ↗</a> : null}
             {r.paySignature ? <a className="underline underline-offset-2" target="_blank" rel="noopener noreferrer" href={explorerTx(r.paySignature, cluster)}>Seller paid ↗</a> : null}
