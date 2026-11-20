@@ -125,3 +125,13 @@ export async function setSetting(key: string, value: unknown) {
   const s = sql();
   await s`insert into pettycash.settings (key, value) values (${key}, ${s.json(value as never)}) on conflict (key) do update set value = excluded.value, updated_at = now()`;
 }
+
+// ── artifacts ───────────────────────────────────────────────────────────────
+export async function saveArtifact(purchaseId: string, contentType: string, bytes: Buffer) {
+  await sql()`insert into pettycash.artifacts (purchase_id, content_type, bytes) values (${purchaseId}, ${contentType}, ${bytes}) on conflict (purchase_id) do nothing`;
+}
+export async function getArtifact(purchaseId: string): Promise<{ contentType: string; bytes: Buffer } | null> {
+  if (!/^[0-9a-f-]{36}$/.test(purchaseId)) return null;
+  const [row] = await sql()`select content_type, bytes from pettycash.artifacts where purchase_id = ${purchaseId}`;
+  return row ? { contentType: row.content_type as string, bytes: row.bytes as Buffer } : null;
+}

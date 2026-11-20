@@ -108,3 +108,11 @@ alter table pettycash.purchases add column if not exists pay_memo text;         
 alter table pettycash.purchases add column if not exists unresolved_until timestamptz;                 -- when an unconfirmed payment can no longer land
 alter table pettycash.purchases add column if not exists step int not null default 0;
 create index if not exists purchases_status_idx on pettycash.purchases (status) where status = 'refund_pending';
+
+-- A delivered file (for example a generated image), kept so the person can see what was bought.
+create table if not exists pettycash.artifacts (
+  purchase_id  uuid primary key references pettycash.purchases (id) on delete cascade,
+  content_type text not null,
+  bytes        bytea not null,
+  created_at   timestamptz not null default now()
+);

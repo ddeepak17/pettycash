@@ -8,6 +8,7 @@ import type { RunEvent } from "../types";
 import { readAllowance } from "./agentWallet";
 import { cluster, limits as serverLimits, reasoning } from "./config";
 import { addEvent, createRun, finishRun } from "./store";
+import { restStreamIfIdle } from "./streamHooks";
 
 export type StartRun = {
   owner: PublicKey;
@@ -64,7 +65,17 @@ export async function startRun(o: StartRun, requestSignal: AbortSignal): Promise
   });
 
   // After the response: settle anything left unclear (return unspent money, record late payments).
-  after(async () => { await done; await settleUnresolved(o.owner.toBase58()).catch(() => {}); });
+  //    Then stay around long enough for the Stream to deliver this errand's receipts, and pause it if nobody else needs it.
+  after(async () => {
+    await done;
+    await settleUnresolved(o.owner.toBase58()).catch(() => {});
+    const idleMs = Number(process.env.STREAM_IDLE_MINUTES ?? 4) * 60_000;
+    const budgetMs = 285_000 - (Date.now() - started);
+    if (budgetMs > idleMs + 5_000) {
+      await new Promise((r) => setTimeout(r, idleMs + 2_000));
+      await restStreamIfIdle().catch(() => {});
+    }
+  });
 
   return new Response(stream, { headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store, no-transform", "x-accel-buffering": "no", "x-run-id": runId } });
 }

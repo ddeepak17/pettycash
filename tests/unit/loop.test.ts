@@ -64,3 +64,15 @@ describe("money formatting", () => {
     expect(parseUsd("")).toBeNull();
   });
 });
+
+describe("finding a delivered image", () => {
+  it("accepts a real PNG and rejects look-alikes", async () => {
+    const { findImage } = await import("../../src/lib/agent/purchase");
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(3000, 7)]).toString("base64");
+    expect(findImage(JSON.stringify({ data: [{ b64_json: png }] }))?.contentType).toBe("image/png");
+    expect(findImage(JSON.stringify({ image: `data:image/png;base64,${png}` }))?.contentType).toBe("image/png");
+    expect(findImage(JSON.stringify({ image: Buffer.alloc(3000, 65).toString("base64") }))).toBeNull(); // not an image signature
+    expect(findImage(JSON.stringify({ html: "<script>alert(1)</script>".repeat(200) }))).toBeNull();
+    expect(findImage("not json")).toBeNull();
+  });
+});

@@ -11,7 +11,7 @@ import type { RunEvent, SellerRef } from "../types";
 import { agentKeypair, agentPublicKey, cluster, network, usdcMint } from "../server/config";
 import { ChainRefused, pull, readAllowance, refund } from "../server/agentWallet";
 import { primaryRpcUrl, read } from "../server/rpc";
-import { insertPurchase, updatePurchase, waitForApproval, setRunStatus, unresolvedPurchases, type PurchaseRow } from "../server/store";
+import { insertPurchase, updatePurchase, waitForApproval, setRunStatus, unresolvedPurchases, saveArtifact, type PurchaseRow } from "../server/store";
 import { ata } from "../solana/allowances";
 import { decide, type PolicyDecision } from "./policy";
 
@@ -41,6 +41,27 @@ export type PurchaseOutcome =
   | { ok: false; purchaseId: string | null; stage: "quote" | "policy" | "pull" | "payment" | "delivery"; error: string; chainRefused: boolean; paid: bigint };
 
 const preview = (text: string, n = 1200) => (text.length > n ? `${text.slice(0, n)}…` : text);
+
+/** Finds an inline base64 image in a seller's JSON response (PNG, JPEG or WebP, up to 4 MB). Checks the file signature. */
+export function findImage(body: string): { contentType: string; bytes: Buffer } | null {
+  let parsed: unknown;
+  try { parsed = JSON.parse(body); } catch { return null; }
+  let best: string | null = null;
+  const walk = (v: unknown, depth: number) => {
+    if (depth > 6 || v === null) return;
+    if (typeof v === "string") { const s = v.replace(/^data:image\/[a-z+]+;base64,/, ""); if (s.length > 2000 && s.length < 6_000_000 && /^[A-Za-z0-9+/=\s]+$/.test(s.slice(0, 400)) && (!best || s.length > best.length)) best = s; return; }
+    if (Array.isArray(v)) { v.slice(0, 20).forEach((x) => walk(x, depth + 1)); return; }
+    if (typeof v === "object") Object.values(v as Record<string, unknown>).slice(0, 40).forEach((x) => walk(x, depth + 1));
+  };
+  walk(parsed, 0);
+  if (!best) return null;
+  const bytes = Buffer.from(best as string, "base64");
+  if (bytes.length > 4_000_000) return null;
+  const contentType = bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ? "image/png"
+    : bytes[0] === 0xff && bytes[1] === 0xd8 ? "image/jpeg"
+    : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP" ? "image/webp" : null;
+  return contentType ? { contentType, bytes } : null;
+}
 /** How long after a payment was signed it can still land: Solana blockhashes live about 60 to 90 seconds; we wait longer. */
 const UNRESOLVED_WINDOW_MS = Number(process.env.UNRESOLVED_WINDOW_MS ?? 150_000);
 /** A purchase stuck at "pulled" for this long was abandoned before a payment existed. */
@@ -148,7 +169,9 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
       response_bytes: paid.bodyBytes, response_preview: preview(paid.bodyText, 600),
     });
     await ctx.emit({ type: "paid", purchaseId, signature: paid.signature, httpStatus: paid.httpStatus!, ms: paid.ms });
-    await ctx.emit({ type: "delivered", purchaseId, bytes: paid.bodyBytes, sha256: paid.sha256 ?? "", preview: preview(paid.bodyText) });
+    const image = findImage(paid.bodyText);
+    if (image) await saveArtifact(purchaseId, image.contentType, image.bytes).catch(() => {});
+    await ctx.emit({ type: "delivered", purchaseId, bytes: paid.bodyBytes, sha256: paid.sha256 ?? "", preview: image ? `[an image, ${Math.round(image.bytes.length / 1024)} KB]` : preview(paid.bodyText) });
     return { ok: true, purchaseId, amount, text: paid.bodyText, contentType: paid.contentType };
   }
 
