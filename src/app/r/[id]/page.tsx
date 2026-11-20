@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import type { PublicConfig, RunDetail } from "@/lib/types";
 import * as api from "@/lib/client/api";
@@ -26,7 +27,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
   return (
     <>
       <Ribbon />
-      <header className={`border-b border-rule ${api.MOCK ? "pt-9" : ""}`}><div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6"><Wordmark /><a className="btn btn-small" href="/">Try it yourself</a></div></header>
+      <header className={`border-b border-rule ${api.MOCK ? "pt-9" : ""}`}><div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6"><Wordmark /><Link className="btn btn-small" href="/">Try it yourself</Link></div></header>
       <main className="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-6">
         <p className="eyebrow">A finished errand, shareable evidence</p>
         {err ? <div className="mt-6"><ErrorNote>{err}</ErrorNote></div> : null}

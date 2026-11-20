@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { shortAddress } from "@/lib/solana/cluster";
 import type { PublicConfig } from "@/lib/types";
@@ -19,10 +20,10 @@ export function Ribbon() {
 
 export function Wordmark() {
   return (
-    <a href="/" className="flex items-center gap-2 font-semibold tracking-tight" aria-label="Petty Cash home">
+    <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight" aria-label="Petty Cash home">
       <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden><rect x="3" y="2" width="20" height="22" rx="2" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M7 8h12M7 12h12M7 16h7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
       <span className="text-lg">Petty Cash</span>
-    </a>
+    </Link>
   );
 }
 
@@ -71,7 +72,7 @@ export function TopBar({ config }: { config: PublicConfig | null }) {
                 onClick={async () => { setErr(null); try { await w.connect(o.name); setOpen(false); } catch (e) { setErr(explainError(e)); } }}
               >
                 <span className="flex items-center gap-2">
-                  {o.icon ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={o.icon} alt="" width={22} height={22} /> : null}
+                  {o.icon ? <img src={o.icon} alt="" width={22} height={22} /> : null}
                   {o.name}
                 </span>
                 <span className="text-xs font-normal text-muted">{o.installed ? "Detected" : "Not installed"}</span>
