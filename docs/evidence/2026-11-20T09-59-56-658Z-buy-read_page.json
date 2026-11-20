@@ -1,0 +1,139 @@
+{
+  "tool": "read_page",
+  "seller": "Minifetch",
+  "url": "https://minifetch.com/api/v1/x402/extract/url-content",
+  "ok": true,
+  "amountBase": "1000",
+  "error": null,
+  "pullSignature": "HS4ZNbpGjGoCjZ2WDSzkzPBbhemz7ZnZnJx9GtzHvuwsLQPpooVKs4eeiVbRK7MvP8jnmfaJQsSVNtG3gbkpNTo",
+  "paySignature": "B6iNAxHQkryikbRQuBvGLyTTUAocCdW71sbuJXa4byXYd6A6fFoRR4RWpraUxPB6ZjPkbQwR2EpoSvjW1gfDPNA",
+  "pullExplorer": "https://explorer.solana.com/tx/HS4ZNbpGjGoCjZ2WDSzkzPBbhemz7ZnZnJx9GtzHvuwsLQPpooVKs4eeiVbRK7MvP8jnmfaJQsSVNtG3gbkpNTo",
+  "payExplorer": "https://explorer.solana.com/tx/B6iNAxHQkryikbRQuBvGLyTTUAocCdW71sbuJXa4byXYd6A6fFoRR4RWpraUxPB6ZjPkbQwR2EpoSvjW1gfDPNA",
+  "payTo": "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
+  "memo": "298043283e6f1a73d02a0ab98c55e2f8",
+  "httpStatus": 200,
+  "responseSha256": "f06b7df83ba4d179a66a52860508f346898141ccca2df8b0c89fa6116cdcaf5b",
+  "responseBytes": 591,
+  "responsePreview": "{\"success\":true,\"queryParameters\":{\"includeMediaUrls\":false},\"results\":[{\"data\":{\"requestUrl\":\"https://example.com\",\"url\":\"https://example.com\",\"summary\":\"# Example Domain\\n\\nThis domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.\",\"proxy\":{\"proxyType\":\"minifetch\",\"proxyUrl\":null,\"userAgent\":\"minifetch/1.0 (+https://minifetch.com/site-owner-faq)\",\"robotsTxt\":{\"allowed\":true}},\"minifetchCache\":{\"hit\":false,\"cachedAt\":\"2026-11-20T09:59:54.754Z\",\"expiresAt\":\"2026-11-20T10:01:54.754Z\"}}}]}",
+  "before": {
+    "ownerUsdc": "969096",
+    "agentUsdc": "1000",
+    "remaining": "118869"
+  },
+  "after": {
+    "ownerUsdc": "968096",
+    "agentUsdc": "1000",
+    "remaining": "117869"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "d26b561a-d147-4ee7-b489-a23d54226121",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "read_page",
+        "name": "Minifetch",
+        "host": "minifetch.com",
+        "url": "https://minifetch.com/api/v1/x402/extract/url-content"
+      },
+      "amountBase": "1000",
+      "payTo": "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
+      "description": "Extracts live, clean markdown from a page after nav, ads, and scripts are stripped. Can also be used by site owners auditing AI readability: see what survives for AEO, GEO and AI search. Obeys robots.txt. If page is blocked, try our /proxy/extract endpoint instead. Supports GET & POST"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "d26b561a-d147-4ee7-b489-a23d54226121",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Minifetch is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.001 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.118869 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "d26b561a-d147-4ee7-b489-a23d54226121",
+      "signature": "HS4ZNbpGjGoCjZ2WDSzkzPBbhemz7ZnZnJx9GtzHvuwsLQPpooVKs4eeiVbRK7MvP8jnmfaJQsSVNtG3gbkpNTo",
+      "amountBase": "1000",
+      "remainingBase": "117869",
+      "ms": 1105
+    },
+    {
+      "type": "paid",
+      "purchaseId": "d26b561a-d147-4ee7-b489-a23d54226121",
+      "signature": "B6iNAxHQkryikbRQuBvGLyTTUAocCdW71sbuJXa4byXYd6A6fFoRR4RWpraUxPB6ZjPkbQwR2EpoSvjW1gfDPNA",
+      "httpStatus": 200,
+      "ms": 1469
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "d26b561a-d147-4ee7-b489-a23d54226121",
+      "bytes": 591,
+      "sha256": "f06b7df83ba4d179a66a52860508f346898141ccca2df8b0c89fa6116cdcaf5b",
+      "preview": "{\"success\":true,\"queryParameters\":{\"includeMediaUrls\":false},\"results\":[{\"data\":{\"requestUrl\":\"https://example.com\",\"url\":\"https://example.com\",\"summary\":\"# Example Domain\\n\\nThis domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.\",\"proxy\":{\"proxyType\":\"minifetch\",\"proxyUrl\":null,\"userAgent\":\"minifetch/1.0 (+https://minifetch.com/site-owner-faq)\",\"robotsTxt\":{\"allowed\":true}},\"minifetchCache\":{\"hit\":false,\"cachedAt\":\"2026-11-20T09:59:54.754Z\",\"expiresAt\":\"2026-11-20T10:01:54.754Z\"}}}]}"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "fixed",
+  "allowance": "BTrYj7cgcHmn5rkTb538afiYNDDsVCHwUV4joYaPwfjc",
+  "owner": "DhrxJqnfTEpgvak87D25SSkwacfpbv3p4gWi94JCqNPb",
+  "agent": "5SAtLdgB7VnhbTBJGjKs4HkYKNjPC4Dnhx6FLVu4Jtz9",
+  "signatures": {
+    "setup": "5UoZdtnNUuhR5uceKFoLmQoiNn8614zep5xRLQ72aUMXCj7NT22MX3XqHkYTUYktAKEoDZPWnZ7VsnAmdxwgKx3S",
+    "create": "3GZUSsEcJ8et8sVsd5ncoL5ocRZiJqDNQDFaifDxXoAyXfwTkjE7jTQRCiABy9pev6ZZGPpV5o45i9UNnoqjKwqV"
+  },
+  "explorer": {
+    "setup": "https://explorer.solana.com/tx/5UoZdtnNUuhR5uceKFoLmQoiNn8614zep5xRLQ72aUMXCj7NT22MX3XqHkYTUYktAKEoDZPWnZ7VsnAmdxwgKx3S",
+    "create": "https://explorer.solana.com/tx/3GZUSsEcJ8et8sVsd5ncoL5ocRZiJqDNQDFaifDxXoAyXfwTkjE7jTQRCiABy9pev6ZZGPpV5o45i9UNnoqjKwqV"
+  }
+}

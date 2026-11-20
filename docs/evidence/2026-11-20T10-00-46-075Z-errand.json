@@ -1,0 +1,878 @@
+{
+  "runId": "9cf86021-c597-4a25-88a1-654f620be29c",
+  "task": "What is new with Solana today? Three bullets with sources.",
+  "model": "openai/gpt-5.6-luna",
+  "status": "done",
+  "spentBase": "15168",
+  "purchases": 7,
+  "seconds": 46.462,
+  "answer": "- **Direct mapping is headed to Solana mainnet this cycle**, although no launch date has been set. [Cryptopolitan](https://www.cryptopolitan.com/solana-direct-mapping-mainnet-no-date/)\n- **Solana is planning a major 2027 overhaul** spanning four core areas. [DigitalToday](https://www.digitaltoday.co.kr/en/view/128504/solana-signals-major-overhaul-in-2027-plans-upgrades-in-four-core-areas)\n- **Solana reportedly dropped the “Mainnet Beta” label**, while SOL was trading near $71.81. [BattleTown News](https://battletown.com/news/solana-drops-mainnet-beta-label-as-sol-trades-near-71-81)",
+  "receipts": [
+    {
+      "kind": "reasoning",
+      "tool": null,
+      "seller": "BlockRun",
+      "amountBase": "1004",
+      "status": "delivered",
+      "pull": "4fQfaEiM2PiQ4XfeWAr7pX58adK6xMcx5FRpuCPW8Ut1GbadcT1UKySUVU7ZnveJnc7r8mRfgqNxFT6rHDAFASop",
+      "pay": "2ag4dnD494XcAHK7Pa3uTwy3PH1LcPk3A5gEJPQsMoas4rdQS2RVTkb2BQpcMJp8uDQ86bRhvnnmHDgt2GA3LDLB",
+      "pullExplorer": "https://explorer.solana.com/tx/4fQfaEiM2PiQ4XfeWAr7pX58adK6xMcx5FRpuCPW8Ut1GbadcT1UKySUVU7ZnveJnc7r8mRfgqNxFT6rHDAFASop",
+      "payExplorer": "https://explorer.solana.com/tx/2ag4dnD494XcAHK7Pa3uTwy3PH1LcPk3A5gEJPQsMoas4rdQS2RVTkb2BQpcMJp8uDQ86bRhvnnmHDgt2GA3LDLB"
+    },
+    {
+      "kind": "tool",
+      "tool": "crypto_news",
+      "seller": "Otto AI",
+      "amountBase": "1000",
+      "status": "delivered",
+      "pull": "4MbfGrZ8TNhXS8uTtkvv7zLFtyU6L5v9Xi7PD1o6RfwAE5UjnWPKgaXpt4pUVReZnaDH8RsCHN6QYaUgxCc1QEeQ",
+      "pay": "3SawMunT731zBLwx1u5nMdDAzTVxScBPmkHsNir7hh8pTQuowXSCvqaqc7aC31DoifEd6uUJKKgx9sqdiTsA42xb",
+      "pullExplorer": "https://explorer.solana.com/tx/4MbfGrZ8TNhXS8uTtkvv7zLFtyU6L5v9Xi7PD1o6RfwAE5UjnWPKgaXpt4pUVReZnaDH8RsCHN6QYaUgxCc1QEeQ",
+      "payExplorer": "https://explorer.solana.com/tx/3SawMunT731zBLwx1u5nMdDAzTVxScBPmkHsNir7hh8pTQuowXSCvqaqc7aC31DoifEd6uUJKKgx9sqdiTsA42xb"
+    },
+    {
+      "kind": "reasoning",
+      "tool": null,
+      "seller": "BlockRun",
+      "amountBase": "1390",
+      "status": "delivered",
+      "pull": "3ksGHC6L7QvkNCutVEtUR6wCb9Mk4Apu4JW5rERwZkw6Kmooj1uDSDRP5r4YGwErMPKnVsNaeBkW6MjFMYyrsZq9",
+      "pay": "3qicUdLbGfyMXgPfacGmGnVbHbByahZKYeuhPx7ZmyWWZZJbeXr2Vnkk7xW4EGMYyPYBSV3XSFYima4vhsWRMcXK",
+      "pullExplorer": "https://explorer.solana.com/tx/3ksGHC6L7QvkNCutVEtUR6wCb9Mk4Apu4JW5rERwZkw6Kmooj1uDSDRP5r4YGwErMPKnVsNaeBkW6MjFMYyrsZq9",
+      "payExplorer": "https://explorer.solana.com/tx/3qicUdLbGfyMXgPfacGmGnVbHbByahZKYeuhPx7ZmyWWZZJbeXr2Vnkk7xW4EGMYyPYBSV3XSFYima4vhsWRMcXK"
+    },
+    {
+      "kind": "tool",
+      "tool": "web_search",
+      "seller": "Minifetch",
+      "amountBase": "1000",
+      "status": "delivered",
+      "pull": "26HTSTyJZoE19y7KLNqNRxEj8xnZqDnEiYLvPsZ1YVwuYmNk9822Apy6LoEetb5u89EAo4UX5ZiEdTKphmbRp6FG",
+      "pay": "4KRJtF9ggh1p2tEz4pAfWhTCnuHaVTwJsqpxX7x1dLDN1fYLKvUph92sMGsFC1VkKNcikYcRD3AVRFwcRXyznCwd",
+      "pullExplorer": "https://explorer.solana.com/tx/26HTSTyJZoE19y7KLNqNRxEj8xnZqDnEiYLvPsZ1YVwuYmNk9822Apy6LoEetb5u89EAo4UX5ZiEdTKphmbRp6FG",
+      "payExplorer": "https://explorer.solana.com/tx/4KRJtF9ggh1p2tEz4pAfWhTCnuHaVTwJsqpxX7x1dLDN1fYLKvUph92sMGsFC1VkKNcikYcRD3AVRFwcRXyznCwd"
+    },
+    {
+      "kind": "reasoning",
+      "tool": null,
+      "seller": "BlockRun",
+      "amountBase": "1783",
+      "status": "delivered",
+      "pull": "HZtKnVC7uRWQpYXasmvhupysUH5dnKqbnKgqU2agxqQtM8C6W9DcqjFtXYX6CuGgt6uQVRzRMYHa4V1GrNKhEJW",
+      "pay": "4HrdmTR6wHH2zRBmtAAy5LDAi5jDpjdNYbick3ZVjscQKd1yupBTEQWu32fkwZAEQVctpxKAfv86krHzcyvc7hHG",
+      "pullExplorer": "https://explorer.solana.com/tx/HZtKnVC7uRWQpYXasmvhupysUH5dnKqbnKgqU2agxqQtM8C6W9DcqjFtXYX6CuGgt6uQVRzRMYHa4V1GrNKhEJW",
+      "payExplorer": "https://explorer.solana.com/tx/4HrdmTR6wHH2zRBmtAAy5LDAi5jDpjdNYbick3ZVjscQKd1yupBTEQWu32fkwZAEQVctpxKAfv86krHzcyvc7hHG"
+    },
+    {
+      "kind": "tool",
+      "tool": "web_search_premium",
+      "seller": "Exa",
+      "amountBase": "7000",
+      "status": "delivered",
+      "pull": "nBeJ7dKp7rjCYqSPTC85ndrhYXKYELUyUJqkAxA6Buu3cbjmEww8rHa36BJRHEoyD3whx87ALGNb1Ujtxgmt9CN",
+      "pay": "Y2yFBmupjYt7AzW7tZ8fkxHUmA9UBSC3oEW4ttZX4dTZDs15Q453AXme6Hst81oYrGKcB6WP3rTANkumJP31W4a",
+      "pullExplorer": "https://explorer.solana.com/tx/nBeJ7dKp7rjCYqSPTC85ndrhYXKYELUyUJqkAxA6Buu3cbjmEww8rHa36BJRHEoyD3whx87ALGNb1Ujtxgmt9CN",
+      "payExplorer": "https://explorer.solana.com/tx/Y2yFBmupjYt7AzW7tZ8fkxHUmA9UBSC3oEW4ttZX4dTZDs15Q453AXme6Hst81oYrGKcB6WP3rTANkumJP31W4a"
+    },
+    {
+      "kind": "reasoning",
+      "tool": null,
+      "seller": "BlockRun",
+      "amountBase": "1991",
+      "status": "delivered",
+      "pull": "3aJnzrLmAHG5xEcV6H3GJhDdNief7xciYoiCG3Rce5rtjg9D5Ly9v3qF1ETpKkXdU9j2Zpc22mneey61mhQsjXto",
+      "pay": "3tubdfarBibaFuED2C3CfyE5q6NCoHGyfMFmhr6N4uSMr9okQBuhi6GexTskWFtYgGgSPmrJW5oZGdXMYDj8VbCy",
+      "pullExplorer": "https://explorer.solana.com/tx/3aJnzrLmAHG5xEcV6H3GJhDdNief7xciYoiCG3Rce5rtjg9D5Ly9v3qF1ETpKkXdU9j2Zpc22mneey61mhQsjXto",
+      "payExplorer": "https://explorer.solana.com/tx/3tubdfarBibaFuED2C3CfyE5q6NCoHGyfMFmhr6N4uSMr9okQBuhi6GexTskWFtYgGgSPmrJW5oZGdXMYDj8VbCy"
+    }
+  ],
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "ff4a30a0-9afa-42e4-b688-943fd19ae35b",
+      "step": 1,
+      "kind": "reasoning",
+      "seller": {
+        "id": null,
+        "name": "BlockRun",
+        "host": "sol.blockrun.ai",
+        "url": "https://sol.blockrun.ai/api/v1/chat/completions"
+      },
+      "amountBase": "1004",
+      "payTo": "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
+      "description": "GPT-5.6 Luna API call (~1780 input, 500 max output tokens)"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "ff4a30a0-9afa-42e4-b688-943fd19ae35b",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "BlockRun is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001004."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001004 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001004 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.001004 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.117869 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001004 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "ff4a30a0-9afa-42e4-b688-943fd19ae35b",
+      "signature": "4fQfaEiM2PiQ4XfeWAr7pX58adK6xMcx5FRpuCPW8Ut1GbadcT1UKySUVU7ZnveJnc7r8mRfgqNxFT6rHDAFASop",
+      "amountBase": "1004",
+      "remainingBase": "116865",
+      "ms": 1343
+    },
+    {
+      "type": "paid",
+      "purchaseId": "ff4a30a0-9afa-42e4-b688-943fd19ae35b",
+      "signature": "2ag4dnD494XcAHK7Pa3uTwy3PH1LcPk3A5gEJPQsMoas4rdQS2RVTkb2BQpcMJp8uDQ86bRhvnnmHDgt2GA3LDLB",
+      "httpStatus": 200,
+      "ms": 3320
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "ff4a30a0-9afa-42e4-b688-943fd19ae35b",
+      "bytes": 694,
+      "sha256": "b5dc40b7d97db12dfc9f3cfc5791cf030fa8d17aef353ae1acb18b7ca1a9b110",
+      "preview": "{\"id\":\"chatcmpl-EmFhUS8bJ2HkZGLYxTWNvg3MzhR9j\",\"object\":\"chat.completion\",\"created\":1795168804,\"model\":\"gpt-5.6-luna\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"say\\\":\\\"I’m going to fetch today’s top Solana-related crypto headlines and sources.\\\",\\\"action\\\":\\\"buy\\\",\\\"tool\\\":\\\"crypto_news\\\",\\\"input\\\":{}}\",\"refusal\":null,\"annotations\":[]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"usage\":{\"prompt_tokens\":917,\"completion_tokens\":54,\"total_tokens\":971,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":13,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}}}"
+    },
+    {
+      "type": "thinking",
+      "step": 1,
+      "text": "I’m going to fetch today’s top Solana-related crypto headlines and sources."
+    },
+    {
+      "type": "quote",
+      "purchaseId": "29356651-cd95-4805-900c-9d7668c1b271",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "crypto_news",
+        "name": "Otto AI",
+        "host": "x402.ottoai.services",
+        "url": "https://x402.ottoai.services/crypto-news"
+      },
+      "amountBase": "1000",
+      "payTo": "6XcSfqJHr9vNW2vbiRaMqUYVm7shDgLepca54wUTDPN5",
+      "description": "Importance-ranked crypto headlines with per-article source links and publish times, plus a sentiment-scored market brief. Regenerated hourly; meta carries the snapshot's age and a fresh/stale verdict."
+    },
+    {
+      "type": "policy",
+      "purchaseId": "29356651-cd95-4805-900c-9d7668c1b271",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Otto AI is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.002004 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.116865 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "29356651-cd95-4805-900c-9d7668c1b271",
+      "signature": "4MbfGrZ8TNhXS8uTtkvv7zLFtyU6L5v9Xi7PD1o6RfwAE5UjnWPKgaXpt4pUVReZnaDH8RsCHN6QYaUgxCc1QEeQ",
+      "amountBase": "1000",
+      "remainingBase": "115865",
+      "ms": 1167
+    },
+    {
+      "type": "paid",
+      "purchaseId": "29356651-cd95-4805-900c-9d7668c1b271",
+      "signature": "3SawMunT731zBLwx1u5nMdDAzTVxScBPmkHsNir7hh8pTQuowXSCvqaqc7aC31DoifEd6uUJKKgx9sqdiTsA42xb",
+      "httpStatus": 200,
+      "ms": 1984
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "29356651-cd95-4805-900c-9d7668c1b271",
+      "bytes": 6985,
+      "sha256": "de32b4338c9abf392229cf6adfb64b4506d3a5b7f06dc10dc1888ab7f9011064",
+      "preview": "{\"status\":\"success\",\"data\":{\"report\":\"_Report generated 2026-11-20 09:00 UTC_\\n\\n## MARKET BRIEF\\n\\nOverview: BlackRock's IBIT posted a record $541 million single-day outflow as bitcoin fell to a four-month low following Anthropic's market debut, signaling weakening institutional demand and broad market stress.\\n\\nMarket Sentiment:\\nOverall Bull/Bear Score: 32\\n\\n---\\n\\n## KEY STORIES\\n\\n1. **BlackRock's IBIT loses record $541M amid Anthropic market debut** - A record single-day outflow from the largest spot Bitcoin ETF signals weakening institutional demand and broad market stress, making it a key sentiment indicator for traders.\\n\\n2. **Bitcoin hits four-month low after Anthropic's IPO as tech stocks wilt** - Bitcoin reaching a four-month low alongside weakening tech stocks highlights macro correlation risk and potential further downside pressure.\\n\\n3. **Big money bought a net $4 billion of bitcoin funds in Q3, ending 9 months of selling** - Reversal from a nine-month selling streak to net institutional buying shows shifting Wall Street positioning, though renewed current-quarter selling adds important nuance.\\n\\n4. **Institutional Bitcoin ETF holdings clock record quarter after…"
+    },
+    {
+      "type": "quote",
+      "purchaseId": "6f4ba49b-920f-46ae-8074-99b36d39a11f",
+      "step": 2,
+      "kind": "reasoning",
+      "seller": {
+        "id": null,
+        "name": "BlockRun",
+        "host": "sol.blockrun.ai",
+        "url": "https://sol.blockrun.ai/api/v1/chat/completions"
+      },
+      "amountBase": "1390",
+      "payTo": "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
+      "description": "GPT-5.6 Luna API call (~3615 input, 500 max output tokens)"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "6f4ba49b-920f-46ae-8074-99b36d39a11f",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "BlockRun is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.00139."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.00139 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.00139 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.003394 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.115865 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.00139 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "6f4ba49b-920f-46ae-8074-99b36d39a11f",
+      "signature": "3ksGHC6L7QvkNCutVEtUR6wCb9Mk4Apu4JW5rERwZkw6Kmooj1uDSDRP5r4YGwErMPKnVsNaeBkW6MjFMYyrsZq9",
+      "amountBase": "1390",
+      "remainingBase": "114475",
+      "ms": 1413
+    },
+    {
+      "type": "paid",
+      "purchaseId": "6f4ba49b-920f-46ae-8074-99b36d39a11f",
+      "signature": "3qicUdLbGfyMXgPfacGmGnVbHbByahZKYeuhPx7ZmyWWZZJbeXr2Vnkk7xW4EGMYyPYBSV3XSFYima4vhsWRMcXK",
+      "httpStatus": 200,
+      "ms": 2931
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "6f4ba49b-920f-46ae-8074-99b36d39a11f",
+      "bytes": 777,
+      "sha256": "c9bf1dea7c033c125d9f76e60a569fe0a67d5da3985a65519995d11a3c1ec6d8",
+      "preview": "{\"id\":\"chatcmpl-EmFhgCp6e6DBrY07Uqy0kvLAALY8N\",\"object\":\"chat.completion\",\"created\":1795168816,\"model\":\"gpt-5.6-luna\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"say\\\":\\\"I’m checking current Solana-specific headlines because the market digest did not include enough Solana news.\\\",\\\"action\\\":\\\"buy\\\",\\\"tool\\\":\\\"web_search\\\",\\\"input\\\":{\\\"query\\\":\\\"Solana news November 20 2026 today\\\"}}\",\"refusal\":null,\"annotations\":[]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"usage\":{\"prompt_tokens\":1885,\"completion_tokens\":76,\"total_tokens\":1961,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":1882,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":20,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}}}"
+    },
+    {
+      "type": "thinking",
+      "step": 2,
+      "text": "I’m checking current Solana-specific headlines because the market digest did not include enough Solana news."
+    },
+    {
+      "type": "quote",
+      "purchaseId": "a5041064-7788-4469-8ea3-c8d56135d664",
+      "step": 2,
+      "kind": "tool",
+      "seller": {
+        "id": "web_search",
+        "name": "Minifetch",
+        "host": "minifetch.com",
+        "url": "https://minifetch.com/api/v1/x402/search/keyword"
+      },
+      "amountBase": "1000",
+      "payTo": "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
+      "description": "Keyword web search by Ceramic.ai returns ranked results as structured JSON: a title, URL, & text snippet per result. The discovery entry point for agents & RAG pipelines: search to find relevant pages, then go deeper on any result with the paid /extract endpoints. Pay-per-search. Use ?limit= to cap results (1-10) and ?descriptionLength= to trim each snippet (0 = titles & URLs only) for desired token efficiency. Supports GET & POST"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "a5041064-7788-4469-8ea3-c8d56135d664",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Minifetch is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.004394 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.114475 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "a5041064-7788-4469-8ea3-c8d56135d664",
+      "signature": "26HTSTyJZoE19y7KLNqNRxEj8xnZqDnEiYLvPsZ1YVwuYmNk9822Apy6LoEetb5u89EAo4UX5ZiEdTKphmbRp6FG",
+      "amountBase": "1000",
+      "remainingBase": "113475",
+      "ms": 1188
+    },
+    {
+      "type": "paid",
+      "purchaseId": "a5041064-7788-4469-8ea3-c8d56135d664",
+      "signature": "4KRJtF9ggh1p2tEz4pAfWhTCnuHaVTwJsqpxX7x1dLDN1fYLKvUph92sMGsFC1VkKNcikYcRD3AVRFwcRXyznCwd",
+      "httpStatus": 200,
+      "ms": 1519
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "a5041064-7788-4469-8ea3-c8d56135d664",
+      "bytes": 4307,
+      "sha256": "e7e771147e3f5396d6495842b8ef429b016fec6375c4874f9c8bdfb09eb53aeb",
+      "preview": "{\"success\":true,\"queryParameters\":{\"query\":\"Solana news November 20 2026 today\",\"limit\":6,\"descriptionLength\":400},\"results\":[{\"data\":{\"title\":\"Solana (SOL) Risks Sell-off as Whale Makes Daring Move - U.Today\",\"url\":\"https://u.today/solana-sol-risks-sell-off-as-whale-makes-daring-move\",\"description\":\"   Solana (SOL) Risks Sell-off as Whale Makes Daring Move - U.Today\\n\\n Solana (SOL) Risks Sell-off as Whale Makes Daring Move News By Godfrey Benjamin Thu, 30/11/2023 - 16:55 Solanas (SOL) stellar November tainted amid subtle whale-induced sell-off Advertisement       Cover image via www.freepik.com  \\n\\n Solana (SOL) is at a tipping point as it is at risk of a downtrend, a development that is not go\",\"page_id\":\"4df18784b27b1b6f04dafceeb12492c8c71880bbe377ef9840244e9e9f680c4ffe7d3f811f814036aa78fb\"}},{\"data\":{\"title\":\"Solana News Today: Solana Price Faces Resistance as Spot ETFs Continue to Draw Investor Interest\",\"url\":\"https://www.analyticsinsight.net/news/solana-news-today-solana-price-faces-resistance-as-spot-etfs-continue-to-draw-investor-interest\",\"description\":\"  Solana News Today: Solana Price Faces Resistance as Spot ETFs Continue to Draw Investor Interest  Bitwise’s BSOL ETF…"
+    },
+    {
+      "type": "quote",
+      "purchaseId": "05bb111a-5bd0-4a18-9671-3a0f1532a34e",
+      "step": 3,
+      "kind": "reasoning",
+      "seller": {
+        "id": null,
+        "name": "BlockRun",
+        "host": "sol.blockrun.ai",
+        "url": "https://sol.blockrun.ai/api/v1/chat/completions"
+      },
+      "amountBase": "1783",
+      "payTo": "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
+      "description": "GPT-5.6 Luna API call (~5486 input, 500 max output tokens)"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "05bb111a-5bd0-4a18-9671-3a0f1532a34e",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "BlockRun is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001783."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001783 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001783 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.006177 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.113475 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001783 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "05bb111a-5bd0-4a18-9671-3a0f1532a34e",
+      "signature": "HZtKnVC7uRWQpYXasmvhupysUH5dnKqbnKgqU2agxqQtM8C6W9DcqjFtXYX6CuGgt6uQVRzRMYHa4V1GrNKhEJW",
+      "amountBase": "1783",
+      "remainingBase": "111692",
+      "ms": 1156
+    },
+    {
+      "type": "paid",
+      "purchaseId": "05bb111a-5bd0-4a18-9671-3a0f1532a34e",
+      "signature": "4HrdmTR6wHH2zRBmtAAy5LDAi5jDpjdNYbick3ZVjscQKd1yupBTEQWu32fkwZAEQVctpxKAfv86krHzcyvc7hHG",
+      "httpStatus": 200,
+      "ms": 3312
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "05bb111a-5bd0-4a18-9671-3a0f1532a34e",
+      "bytes": 893,
+      "sha256": "e622c8e16faec64d5c434f4d1491b66ecdf1288e5748f3c6bd3a60e974681cce",
+      "preview": "{\"id\":\"chatcmpl-EmFhrsxHjkhRts2LZKyH0rPtMu8VN\",\"object\":\"chat.completion\",\"created\":1795168827,\"model\":\"gpt-5.6-luna\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"say\\\":\\\"I couldn’t verify three genuinely current Solana developments from the available results; I’m checking a more precise news search.\\\",\\\"action\\\":\\\"buy\\\",\\\"tool\\\":\\\"web_search_premium\\\",\\\"input\\\":{\\\"query\\\":\\\"Most important Solana-specific news and developments published today, November 20 2026, with reliable source links\\\"}}\",\"refusal\":null,\"annotations\":[]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"usage\":{\"prompt_tokens\":3034,\"completion_tokens\":103,\"total_tokens\":3137,\"prompt_tokens_details\":{\"cached_tokens\":1882,\"cache_write_tokens\":1149,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":29,\"audio_tokens\":0,\"accepted_prediction_tokens\":0,\"rejected_prediction_tokens\":0}}}"
+    },
+    {
+      "type": "thinking",
+      "step": 3,
+      "text": "I couldn’t verify three genuinely current Solana developments from the available results; I’m checking a more precise news search."
+    },
+    {
+      "type": "quote",
+      "purchaseId": "a8aa88e8-a697-482c-b09f-d5de3b89e836",
+      "step": 3,
+      "kind": "tool",
+      "seller": {
+        "id": "web_search_premium",
+        "name": "Exa",
+        "host": "api.exa.ai",
+        "url": "https://api.exa.ai/search"
+      },
+      "amountBase": "7000",
+      "payTo": "12Ec2cJmfR1C9uwejzxcuMhUgEC7wDrLgm1wBvvR5w9E",
+      "description": "Exa /search endpoint"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "a8aa88e8-a697-482c-b09f-d5de3b89e836",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Exa is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.007."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.007 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.007 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.013177 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.111692 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.007 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "a8aa88e8-a697-482c-b09f-d5de3b89e836",
+      "signature": "nBeJ7dKp7rjCYqSPTC85ndrhYXKYELUyUJqkAxA6Buu3cbjmEww8rHa36BJRHEoyD3whx87ALGNb1Ujtxgmt9CN",
+      "amountBase": "7000",
+      "remainingBase": "104692",
+      "ms": 1739
+    },
+    {
+      "type": "paid",
+      "purchaseId": "a8aa88e8-a697-482c-b09f-d5de3b89e836",
+      "signature": "Y2yFBmupjYt7AzW7tZ8fkxHUmA9UBSC3oEW4ttZX4dTZDs15Q453AXme6Hst81oYrGKcB6WP3rTANkumJP31W4a",
+      "httpStatus": 200,
+      "ms": 1766
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "a8aa88e8-a697-482c-b09f-d5de3b89e836",
+      "bytes": 1570,
+      "sha256": "bf889506df54eb7977a54efca429f56f30851f2db44e741f9919b66f416bf32b",
+      "preview": "{\"requestId\":\"c4fdaab1e1f4fc7cb5dbc7212ab5a6fd\",\"resolvedSearchType\":\"\",\"results\":[{\"id\":\"https://www.cryptopolitan.com/solana-direct-mapping-mainnet-no-date/\",\"title\":\"Direct mapping heads to Solana mainnet this cycle with no date set\",\"url\":\"https://www.cryptopolitan.com/solana-direct-mapping-mainnet-no-date/\",\"publishedDate\":\"2026-11-20T04:15:21.000Z\"},{\"id\":\"https://www.digitaltoday.co.kr/en/view/128504/solana-signals-major-overhaul-in-2027-plans-upgrades-in-four-core-areas\",\"title\":\"Solana signals major overhaul in 2027, plans upgrades in four core areas\",\"url\":\"https://www.digitaltoday.co.kr/en/view/128504/solana-signals-major-overhaul-in-2027-plans-upgrades-in-four-core-areas\",\"publishedDate\":\"2026-11-20T00:10:39.000Z\",\"author\":\"Jinju Hong\"},{\"id\":\"https://coinmarketcap.com/cmc-ai/solana/latest-updates/\",\"title\":\"Latest Solana News - (SOL) Future Outlook, Trends & Market Insights\",\"url\":\"https://coinmarketcap.com/cmc-ai/solana/latest-updates/\",\"publishedDate\":\"2026-11-20T02:00:00.000Z\"},{\"id\":\"https://solana.com/news\",\"title\":\"Solana News: Ecosystem and Developer Updates | Solana Media\",\"url\":\"https://solana.com/news\"},{\"id\":\"https://battletown.com/news/solana-drops-mainnet-…"
+    },
+    {
+      "type": "quote",
+      "purchaseId": "1543ad74-0057-4ee9-83e6-edacecd89d84",
+      "step": 4,
+      "kind": "reasoning",
+      "seller": {
+        "id": null,
+        "name": "BlockRun",
+        "host": "sol.blockrun.ai",
+        "url": "https://sol.blockrun.ai/api/v1/chat/completions"
+      },
+      "amountBase": "1991",
+      "payTo": "AQqnMFBwGZEoti85aTVRy8XYpKrho7GaMDx9ZB3CEeKA",
+      "description": "GPT-5.6 Luna API call (~6480 input, 500 max output tokens)"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "1543ad74-0057-4ee9-83e6-edacecd89d84",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "BlockRun is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001991."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001991 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001991 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.015168 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.104692 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001991 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "1543ad74-0057-4ee9-83e6-edacecd89d84",
+      "signature": "3aJnzrLmAHG5xEcV6H3GJhDdNief7xciYoiCG3Rce5rtjg9D5Ly9v3qF1ETpKkXdU9j2Zpc22mneey61mhQsjXto",
+      "amountBase": "1991",
+      "remainingBase": "102701",
+      "ms": 1291
+    },
+    {
+      "type": "paid",
+      "purchaseId": "1543ad74-0057-4ee9-83e6-edacecd89d84",
+      "signature": "3tubdfarBibaFuED2C3CfyE5q6NCoHGyfMFmhr6N4uSMr9okQBuhi6GexTskWFtYgGgSPmrJW5oZGdXMYDj8VbCy",
+      "httpStatus": 200,
+      "ms": 5412
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "1543ad74-0057-4ee9-83e6-edacecd89d84",
+      "bytes": 1258,
+      "sha256": "ff1c518bccb2f9d1677e37695e96ebe546a74131a49f209b30143700d4924fdc",
+      "preview": "{\"id\":\"chatcmpl-EmFi4Kn6J1r4CeYP6rFNHwjrUSXz9\",\"object\":\"chat.completion\",\"created\":1795168840,\"model\":\"gpt-5.6-luna\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"say\\\":\\\"Three Solana developments reported today (Nov. 20, 2026):\\\",\\\"action\\\":\\\"answer\\\",\\\"answer\\\":\\\"- **Direct mapping is headed to Solana mainnet this cycle**, although no launch date has been set. [Cryptopolitan](https://www.cryptopolitan.com/solana-direct-mapping-mainnet-no-date/)\\\\n- **Solana is planning a major 2027 overhaul** spanning four core areas. [DigitalToday](https://www.digitaltoday.co.kr/en/view/128504/solana-signals-major-overhaul-in-2027-plans-upgrades-in-four-core-areas)\\\\n- **Solana reportedly dropped the “Mainnet Beta” label**, while SOL was trading near $71.81. [BattleTown News](https://battletown.com/news/solana-drops-mainnet-beta-label-as-sol-trades-near-71-81)\\\"}\",\"refusal\":null,\"annotations\":[]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"usage\":{\"prompt_tokens\":3623,\"completion_tokens\":298,\"total_tokens\":3921,\"prompt_tokens_details\":{\"cached_tokens\":3031,\"cache_write_tokens\":589,\"audio_tokens\":0},\"completion_tokens_details\":{\"reasoning_tokens\":102,\"audio_tokens\":0,\"accepted_…"
+    },
+    {
+      "type": "thinking",
+      "step": 4,
+      "text": "Three Solana developments reported today (Nov. 20, 2026):"
+    },
+    {
+      "type": "answer",
+      "text": "- **Direct mapping is headed to Solana mainnet this cycle**, although no launch date has been set. [Cryptopolitan](https://www.cryptopolitan.com/solana-direct-mapping-mainnet-no-date/)\n- **Solana is planning a major 2027 overhaul** spanning four core areas. [DigitalToday](https://www.digitaltoday.co.kr/en/view/128504/solana-signals-major-overhaul-in-2027-plans-upgrades-in-four-core-areas)\n- **Solana reportedly dropped the “Mainnet Beta” label**, while SOL was trading near $71.81. [BattleTown News](https://battletown.com/news/solana-drops-mainnet-beta-label-as-sol-trades-near-71-81)"
+    }
+  ]
+}

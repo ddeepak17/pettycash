@@ -1,0 +1,139 @@
+{
+  "tool": "crypto_news",
+  "seller": "Otto AI",
+  "url": "https://x402.ottoai.services/crypto-news",
+  "ok": true,
+  "amountBase": "1000",
+  "error": null,
+  "pullSignature": "2sGD3jMyzcAN4t36mFYdEpP559HLfaAoRKABd1QXQvkrBy7qUpZndSeW6rc2fa5j4mKV6SpiLF7DjtxfvFvPwnyJ",
+  "paySignature": "KVL1m1JtYRU79dVKTQJLL8WjTxDYn7V6piqCzaXf4ggKKSzMuLWuYTZc9iRMRcgAotXShNHYGKwPA6rJVNJ3bFH",
+  "pullExplorer": "https://explorer.solana.com/tx/2sGD3jMyzcAN4t36mFYdEpP559HLfaAoRKABd1QXQvkrBy7qUpZndSeW6rc2fa5j4mKV6SpiLF7DjtxfvFvPwnyJ",
+  "payExplorer": "https://explorer.solana.com/tx/KVL1m1JtYRU79dVKTQJLL8WjTxDYn7V6piqCzaXf4ggKKSzMuLWuYTZc9iRMRcgAotXShNHYGKwPA6rJVNJ3bFH",
+  "payTo": "6XcSfqJHr9vNW2vbiRaMqUYVm7shDgLepca54wUTDPN5",
+  "memo": "8410d56a4db37d68dfd49e0af154b994",
+  "httpStatus": 200,
+  "responseSha256": "7f24a7730d31f0722202eb4aa6b81f10184862218d4c2562951e4d183891390d",
+  "responseBytes": 6985,
+  "responsePreview": "{\"status\":\"success\",\"data\":{\"report\":\"_Report generated 2026-11-20 09:00 UTC_\\n\\n## MARKET BRIEF\\n\\nOverview: BlackRock's IBIT posted a record $541 million single-day outflow as bitcoin fell to a four-month low following Anthropic's market debut, signaling weakening institutional demand and broad market stress.\\n\\nMarket Sentiment:\\nOverall Bull/Bear Score: 32\\n\\n---\\n\\n## KEY STORIES\\n\\n1. **BlackRock's IBIT loses record $541M amid Anthropic market debut** - A record single-day outflow from the largest spot Bitcoin ETF signals weakening institutional demand and broad market stress, making it ",
+  "before": {
+    "ownerUsdc": "985596",
+    "agentUsdc": "1000",
+    "remaining": "135369"
+  },
+  "after": {
+    "ownerUsdc": "984596",
+    "agentUsdc": "1000",
+    "remaining": "134369"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "9f6d783d-f85e-4047-a41a-ae929f8cac70",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "crypto_news",
+        "name": "Otto AI",
+        "host": "x402.ottoai.services",
+        "url": "https://x402.ottoai.services/crypto-news"
+      },
+      "amountBase": "1000",
+      "payTo": "6XcSfqJHr9vNW2vbiRaMqUYVm7shDgLepca54wUTDPN5",
+      "description": "Importance-ranked crypto headlines with per-article source links and publish times, plus a sentiment-scored market brief. Regenerated hourly; meta carries the snapshot's age and a fresh/stale verdict."
+    },
+    {
+      "type": "policy",
+      "purchaseId": "9f6d783d-f85e-4047-a41a-ae929f8cac70",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Otto AI is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.001 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.135369 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "9f6d783d-f85e-4047-a41a-ae929f8cac70",
+      "signature": "2sGD3jMyzcAN4t36mFYdEpP559HLfaAoRKABd1QXQvkrBy7qUpZndSeW6rc2fa5j4mKV6SpiLF7DjtxfvFvPwnyJ",
+      "amountBase": "1000",
+      "remainingBase": "134369",
+      "ms": 1144
+    },
+    {
+      "type": "paid",
+      "purchaseId": "9f6d783d-f85e-4047-a41a-ae929f8cac70",
+      "signature": "KVL1m1JtYRU79dVKTQJLL8WjTxDYn7V6piqCzaXf4ggKKSzMuLWuYTZc9iRMRcgAotXShNHYGKwPA6rJVNJ3bFH",
+      "httpStatus": 200,
+      "ms": 1713
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "9f6d783d-f85e-4047-a41a-ae929f8cac70",
+      "bytes": 6985,
+      "sha256": "7f24a7730d31f0722202eb4aa6b81f10184862218d4c2562951e4d183891390d",
+      "preview": "{\"status\":\"success\",\"data\":{\"report\":\"_Report generated 2026-11-20 09:00 UTC_\\n\\n## MARKET BRIEF\\n\\nOverview: BlackRock's IBIT posted a record $541 million single-day outflow as bitcoin fell to a four-month low following Anthropic's market debut, signaling weakening institutional demand and broad market stress.\\n\\nMarket Sentiment:\\nOverall Bull/Bear Score: 32\\n\\n---\\n\\n## KEY STORIES\\n\\n1. **BlackRock's IBIT loses record $541M amid Anthropic market debut** - A record single-day outflow from the largest spot Bitcoin ETF signals weakening institutional demand and broad market stress, making it a key sentiment indicator for traders.\\n\\n2. **Bitcoin hits four-month low after Anthropic's IPO as tech stocks wilt** - Bitcoin reaching a four-month low alongside weakening tech stocks highlights macro correlation risk and potential further downside pressure.\\n\\n3. **Big money bought a net $4 billion of bitcoin funds in Q3, ending 9 months of selling** - Reversal from a nine-month selling streak to net institutional buying shows shifting Wall Street positioning, though renewed current-quarter selling adds important nuance.\\n\\n4. **Institutional Bitcoin ETF holdings clock record quarter after…"
+    }
+  ]
+}

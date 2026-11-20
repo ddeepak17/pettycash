@@ -1,0 +1,20 @@
+{
+  "allowance": "BTrYj7cgcHmn5rkTb538afiYNDDsVCHwUV4joYaPwfjc",
+  "attemptedBase": "136370",
+  "remainingBase": "136369",
+  "refused": true,
+  "code": 300,
+  "name": "amountExceedsLimit",
+  "plain": "The amount is more than what is left in this petty cash.",
+  "signature": "4kYmEos8AgBdTH4sj3Rem2Zo7mGvvQuR6QvSRLKSGNvxTsLkEtm63wfTH5dKwnNmgZnPDMSZJP9bKPscjgFrEzZs",
+  "logs": [
+    "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+    "Program ComputeBudget111111111111111111111111111111 success",
+    "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+    "Program ComputeBudget111111111111111111111111111111 success",
+    "Program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 invoke [1]",
+    "Program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 consumed 910 of 109700 compute units",
+    "Program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 failed: custom program error: 0x12c"
+  ],
+  "explorer": "https://explorer.solana.com/tx/4kYmEos8AgBdTH4sj3Rem2Zo7mGvvQuR6QvSRLKSGNvxTsLkEtm63wfTH5dKwnNmgZnPDMSZJP9bKPscjgFrEzZs"
+}

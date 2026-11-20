@@ -1,0 +1,139 @@
+{
+  "tool": "web_search_premium",
+  "seller": "Exa",
+  "url": "https://api.exa.ai/search",
+  "ok": true,
+  "amountBase": "7000",
+  "error": null,
+  "pullSignature": "4idDSjhAmimioN7jy4ModbVe2burPrL5FZLnBceRjdtWcC3pUpHWLvbhvveWuTKKNpiQe2vwXeUf8sQYviHvztT4",
+  "paySignature": "4QT1CaKZLDoUGooo3DK6KAwCi78bFdDCg4JwRnKSYqzMzJGJ8dYBhpujh1DeKEAYG284FLFU9Yhq9h6kmUCvDoyD",
+  "pullExplorer": "https://explorer.solana.com/tx/4idDSjhAmimioN7jy4ModbVe2burPrL5FZLnBceRjdtWcC3pUpHWLvbhvveWuTKKNpiQe2vwXeUf8sQYviHvztT4",
+  "payExplorer": "https://explorer.solana.com/tx/4QT1CaKZLDoUGooo3DK6KAwCi78bFdDCg4JwRnKSYqzMzJGJ8dYBhpujh1DeKEAYG284FLFU9Yhq9h6kmUCvDoyD",
+  "payTo": "12Ec2cJmfR1C9uwejzxcuMhUgEC7wDrLgm1wBvvR5w9E",
+  "memo": "122c0249fa9d6f8398c88ea16b5ce537",
+  "httpStatus": 200,
+  "responseSha256": "daebfaaf62d88919936c462204c8cc5a322e9d4407082c550c81a49b89682664",
+  "responseBytes": 1485,
+  "responsePreview": "{\"requestId\":\"9d5fe65483bb453156281091cb15f83d\",\"resolvedSearchType\":\"\",\"results\":[{\"id\":\"https://solana.com/news/subscriptions-and-allowances\",\"title\":\"\",\"url\":\"https://solana.com/news/subscriptions-and-allowances\"},{\"id\":\"https://moonsonglabs.com/blog/moonsong-building-the-infrastructure-behind-solanas-native-subscriptions-program/\",\"title\":\"Moonsong: Building the Infrastructure Behind Subscriptions & Allowances ...\",\"url\":\"https://moonsonglabs.com/blog/moonsong-building-the-infrastructure-behind-solanas-native-subscriptions-program/\",\"publishedDate\":\"2026-06-02T00:00:00.000Z\"},{\"id\":\"https:",
+  "before": {
+    "ownerUsdc": "976096",
+    "agentUsdc": "1000",
+    "remaining": "125869"
+  },
+  "after": {
+    "ownerUsdc": "969096",
+    "agentUsdc": "1000",
+    "remaining": "118869"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "64a9c509-9850-4069-a5cf-d9e7bee7de54",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "web_search_premium",
+        "name": "Exa",
+        "host": "api.exa.ai",
+        "url": "https://api.exa.ai/search"
+      },
+      "amountBase": "7000",
+      "payTo": "12Ec2cJmfR1C9uwejzxcuMhUgEC7wDrLgm1wBvvR5w9E",
+      "description": "Exa /search endpoint"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "64a9c509-9850-4069-a5cf-d9e7bee7de54",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Exa is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.007."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.007 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.007 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.007 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.125869 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.007 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "64a9c509-9850-4069-a5cf-d9e7bee7de54",
+      "signature": "4idDSjhAmimioN7jy4ModbVe2burPrL5FZLnBceRjdtWcC3pUpHWLvbhvveWuTKKNpiQe2vwXeUf8sQYviHvztT4",
+      "amountBase": "7000",
+      "remainingBase": "118869",
+      "ms": 2324
+    },
+    {
+      "type": "paid",
+      "purchaseId": "64a9c509-9850-4069-a5cf-d9e7bee7de54",
+      "signature": "4QT1CaKZLDoUGooo3DK6KAwCi78bFdDCg4JwRnKSYqzMzJGJ8dYBhpujh1DeKEAYG284FLFU9Yhq9h6kmUCvDoyD",
+      "httpStatus": 200,
+      "ms": 1542
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "64a9c509-9850-4069-a5cf-d9e7bee7de54",
+      "bytes": 1485,
+      "sha256": "daebfaaf62d88919936c462204c8cc5a322e9d4407082c550c81a49b89682664",
+      "preview": "{\"requestId\":\"9d5fe65483bb453156281091cb15f83d\",\"resolvedSearchType\":\"\",\"results\":[{\"id\":\"https://solana.com/news/subscriptions-and-allowances\",\"title\":\"\",\"url\":\"https://solana.com/news/subscriptions-and-allowances\"},{\"id\":\"https://moonsonglabs.com/blog/moonsong-building-the-infrastructure-behind-solanas-native-subscriptions-program/\",\"title\":\"Moonsong: Building the Infrastructure Behind Subscriptions & Allowances ...\",\"url\":\"https://moonsonglabs.com/blog/moonsong-building-the-infrastructure-behind-solanas-native-subscriptions-program/\",\"publishedDate\":\"2026-06-02T00:00:00.000Z\"},{\"id\":\"https://solana.com/docs/payments/subscriptions/overview\",\"title\":\"Overview\",\"url\":\"https://solana.com/docs/payments/subscriptions/overview\"},{\"id\":\"https://www.linkedin.com/posts/solana_recurring-billing-and-delegated-spending-activity-7467592005171195904-PSNh\",\"title\":\"Solana Adds Recurring Billing and Delegated Spending\",\"url\":\"https://www.linkedin.com/posts/solana_recurring-billing-and-delegated-spending-activity-7467592005171195904-PSNh\"},{\"id\":\"https://solanacompass.com/news/solana-launches-native-subscription-billing-and-recurring-payments-on-mainnet\",\"title\":\"Solana Subscriptions & Allowances…"
+    }
+  ]
+}

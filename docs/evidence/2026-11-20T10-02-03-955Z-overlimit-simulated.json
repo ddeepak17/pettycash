@@ -1,0 +1,12 @@
+{
+  "allowance": "BTrYj7cgcHmn5rkTb538afiYNDDsVCHwUV4joYaPwfjc",
+  "attemptedBase": "1",
+  "remainingBase": "0",
+  "refused": true,
+  "code": null,
+  "name": "allowanceMissing",
+  "plain": "This petty cash no longer exists onchain, so nothing can be pulled from it.",
+  "signature": null,
+  "logs": [],
+  "explorer": null
+}

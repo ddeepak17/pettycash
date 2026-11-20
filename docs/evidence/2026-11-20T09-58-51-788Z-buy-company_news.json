@@ -1,0 +1,139 @@
+{
+  "tool": "company_news",
+  "seller": "2s.io",
+  "url": "https://2s.io/api/stocks/company-news?ticker=NVDA",
+  "ok": true,
+  "amountBase": "2500",
+  "error": null,
+  "pullSignature": "5ifQXC47G2nF42xk3ahZuF7RVXzNbZT3JEXao55SvDqWPBbdj5BjYXtZrtCxy251hHqpTFbzFbDW51LkjccZc855",
+  "paySignature": "5Hj77gtGd5kaTQb9dCjSQGqtNB7EzyLQSHDpeTnLT1RfaXYcEsXJDirZgb56spvGEcy7iF27eKTEqdk8S5pUMEea",
+  "pullExplorer": "https://explorer.solana.com/tx/5ifQXC47G2nF42xk3ahZuF7RVXzNbZT3JEXao55SvDqWPBbdj5BjYXtZrtCxy251hHqpTFbzFbDW51LkjccZc855",
+  "payExplorer": "https://explorer.solana.com/tx/5Hj77gtGd5kaTQb9dCjSQGqtNB7EzyLQSHDpeTnLT1RfaXYcEsXJDirZgb56spvGEcy7iF27eKTEqdk8S5pUMEea",
+  "payTo": "TW6ntaGzvj63ZgPjszd4FCGmVTGfzv1MAYZbjYcyWhn",
+  "memo": "c5fcfd98d46fb8ababf2b55563a32f09",
+  "httpStatus": 200,
+  "responseSha256": "0cd6fe9e2f07fe5901f0ce1f47b754c95fd46dda1f81c8497172dad2853e2e98",
+  "responseBytes": 57069,
+  "responsePreview": "{\"data\":{\"ok\":true,\"items\":[{\"datetime\":\"2026-11-20T07:25:00.000Z\",\"headline\":\"$500 Invested in GE Aerospace (GE) Stock Today Could Be Worth This Much in 3 Years\",\"source\":\"Yahoo\",\"summary\":\"The stock has been volatile, but its price is appealing, and its growth prospects good.\",\"url\":\"https://finnhub.io/api/news?id=6157324523b4753ca09cda22c8354b712d7bb45846006fe296e4672d2a76e912\",\"image\":\"https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png\",\"category\":\"company\",\"related\":\"NVDA\",\"id\":143968180},{\"datetime\":\"2026-11-20T06:58:31.000Z\",\"headline\":\"SpaceX Holds Its Orbit As Space S",
+  "before": {
+    "ownerUsdc": "983596",
+    "agentUsdc": "1000",
+    "remaining": "133369"
+  },
+  "after": {
+    "ownerUsdc": "981096",
+    "agentUsdc": "1000",
+    "remaining": "130869"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "c4303c23-8bea-4c4e-827e-24601d619f80",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "company_news",
+        "name": "2s.io",
+        "host": "2s.io",
+        "url": "https://2s.io/api/stocks/company-news"
+      },
+      "amountBase": "2500",
+      "payTo": "TW6ntaGzvj63ZgPjszd4FCGmVTGfzv1MAYZbjYcyWhn",
+      "description": "Recent news articles about a specific US-listed company. Pass ticker and optionally a from/to date window (YYYY-MM-DD; defaults to the last 14 days); returns headlines with source, summary, URL, image, related symbol, category, and publish time (newest first). Use it to catch up on what is being written about a company. News aggregated by Finnhub."
+    },
+    {
+      "type": "policy",
+      "purchaseId": "c4303c23-8bea-4c4e-827e-24601d619f80",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "2s.io is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.0025."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.0025 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.0025 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.0025 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.133369 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.0025 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "c4303c23-8bea-4c4e-827e-24601d619f80",
+      "signature": "5ifQXC47G2nF42xk3ahZuF7RVXzNbZT3JEXao55SvDqWPBbdj5BjYXtZrtCxy251hHqpTFbzFbDW51LkjccZc855",
+      "amountBase": "2500",
+      "remainingBase": "130869",
+      "ms": 1231
+    },
+    {
+      "type": "paid",
+      "purchaseId": "c4303c23-8bea-4c4e-827e-24601d619f80",
+      "signature": "5Hj77gtGd5kaTQb9dCjSQGqtNB7EzyLQSHDpeTnLT1RfaXYcEsXJDirZgb56spvGEcy7iF27eKTEqdk8S5pUMEea",
+      "httpStatus": 200,
+      "ms": 1488
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "c4303c23-8bea-4c4e-827e-24601d619f80",
+      "bytes": 57069,
+      "sha256": "0cd6fe9e2f07fe5901f0ce1f47b754c95fd46dda1f81c8497172dad2853e2e98",
+      "preview": "{\"data\":{\"ok\":true,\"items\":[{\"datetime\":\"2026-11-20T07:25:00.000Z\",\"headline\":\"$500 Invested in GE Aerospace (GE) Stock Today Could Be Worth This Much in 3 Years\",\"source\":\"Yahoo\",\"summary\":\"The stock has been volatile, but its price is appealing, and its growth prospects good.\",\"url\":\"https://finnhub.io/api/news?id=6157324523b4753ca09cda22c8354b712d7bb45846006fe296e4672d2a76e912\",\"image\":\"https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png\",\"category\":\"company\",\"related\":\"NVDA\",\"id\":143968180},{\"datetime\":\"2026-11-20T06:58:31.000Z\",\"headline\":\"SpaceX Holds Its Orbit As Space Stocks Fall Back To Earth — Inside A Rough Week For FLY, ASTS, RKLB And RDW\",\"source\":\"Yahoo\",\"summary\":\"Rocket Lab completed its 100th Electron launch, and CEO Peter Beck explained how its larger Neutron rocket could approach a 50% gross margin.\",\"url\":\"https://finnhub.io/api/news?id=d1e0cd407b75ef6dd2cb350fdf0b367bdf07ddecc06eb9b1819e5b96689622a0\",\"image\":\"https://s.yimg.com/rz/stage/p/yahoo_finance_en-US_h_p_finance_2.png\",\"category\":\"company\",\"related\":\"NVDA\",\"id\":143964554},{\"datetime\":\"2026-11-20T06:30:02.000Z\",\"headline\":\"This Unstoppable ETF Is Up by Double Digits in 2026. Here's Where …"
+    }
+  ]
+}

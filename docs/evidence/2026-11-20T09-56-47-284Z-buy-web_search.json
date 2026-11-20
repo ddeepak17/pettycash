@@ -1,0 +1,139 @@
+{
+  "tool": "web_search",
+  "seller": "Minifetch",
+  "url": "https://minifetch.com/api/v1/x402/search/keyword?query=best+tacos+near+UT+Austin&limit=6&descriptionLength=400",
+  "ok": true,
+  "amountBase": "1000",
+  "error": null,
+  "pullSignature": "4M4XjWAAAN2NvoVi7HkvJ2FtER43HhfZa3CygtiFkc1KPyk3qc89coRyrE4oeptUqikKGuWSaQCiUTxdsZWFGqJH",
+  "paySignature": "61S8LZo5z1mbYfU3SNNTWJVSpNb7wByZFwuzRgnWLJnpKnRJnoQ2mi1BhJeW9Xbk1NVCDFzrdvkfWttR9dLpRQ1x",
+  "pullExplorer": "https://explorer.solana.com/tx/4M4XjWAAAN2NvoVi7HkvJ2FtER43HhfZa3CygtiFkc1KPyk3qc89coRyrE4oeptUqikKGuWSaQCiUTxdsZWFGqJH",
+  "payExplorer": "https://explorer.solana.com/tx/61S8LZo5z1mbYfU3SNNTWJVSpNb7wByZFwuzRgnWLJnpKnRJnoQ2mi1BhJeW9Xbk1NVCDFzrdvkfWttR9dLpRQ1x",
+  "payTo": "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
+  "memo": "a388a1a4c59440290a09d956c1ca8fd4",
+  "httpStatus": 200,
+  "responseSha256": "0a2ecc28296f16f6ac6bf64b0e8498f6a1b656d66dc8f0de7fdc3c7b00f21959",
+  "responseBytes": 4215,
+  "responsePreview": "{\"success\":true,\"queryParameters\":{\"query\":\"best tacos near UT Austin\",\"limit\":6,\"descriptionLength\":400},\"results\":[{\"data\":{\"title\":\"Austins Best Late-Night Restaurants for the Tired College Student\",\"url\":\"https://spoonuniversity.com/school/stedwards/best-late-night-restaurants-in-austin/\",\"description\":\" Food is important in Texas, and if you havent been here then you dont understand our barbecue ! Twenty-four-hour food is a big deal here in good ole Austin, from higher-end pasta dishes to ratchet and greasy breakfast tacos you can only be drunk to eat. There is something to find at any ho",
+  "before": {
+    "ownerUsdc": "1000227",
+    "agentUsdc": "0",
+    "remaining": "150000"
+  },
+  "after": {
+    "ownerUsdc": "999227",
+    "agentUsdc": "0",
+    "remaining": "149000"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "65f734b2-eda6-47f4-9365-7931c08b9b68",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "web_search",
+        "name": "Minifetch",
+        "host": "minifetch.com",
+        "url": "https://minifetch.com/api/v1/x402/search/keyword"
+      },
+      "amountBase": "1000",
+      "payTo": "46vMcwuC4sK11sB3gkLhyA7J7GEwfkhn5rFyDtihBwqe",
+      "description": "Keyword web search by Ceramic.ai returns ranked results as structured JSON: a title, URL, & text snippet per result. The discovery entry point for agents & RAG pipelines: search to find relevant pages, then go deeper on any result with the paid /extract endpoints. Pay-per-search. Use ?limit= to cap results (1-10) and ?descriptionLength= to trim each snippet (0 = titles & URLs only) for desired token efficiency. Supports GET & POST"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "65f734b2-eda6-47f4-9365-7931c08b9b68",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "Minifetch is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.001 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.15 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "65f734b2-eda6-47f4-9365-7931c08b9b68",
+      "signature": "4M4XjWAAAN2NvoVi7HkvJ2FtER43HhfZa3CygtiFkc1KPyk3qc89coRyrE4oeptUqikKGuWSaQCiUTxdsZWFGqJH",
+      "amountBase": "1000",
+      "remainingBase": "149000",
+      "ms": 1756
+    },
+    {
+      "type": "paid",
+      "purchaseId": "65f734b2-eda6-47f4-9365-7931c08b9b68",
+      "signature": "61S8LZo5z1mbYfU3SNNTWJVSpNb7wByZFwuzRgnWLJnpKnRJnoQ2mi1BhJeW9Xbk1NVCDFzrdvkfWttR9dLpRQ1x",
+      "httpStatus": 200,
+      "ms": 1390
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "65f734b2-eda6-47f4-9365-7931c08b9b68",
+      "bytes": 4215,
+      "sha256": "0a2ecc28296f16f6ac6bf64b0e8498f6a1b656d66dc8f0de7fdc3c7b00f21959",
+      "preview": "{\"success\":true,\"queryParameters\":{\"query\":\"best tacos near UT Austin\",\"limit\":6,\"descriptionLength\":400},\"results\":[{\"data\":{\"title\":\"Austins Best Late-Night Restaurants for the Tired College Student\",\"url\":\"https://spoonuniversity.com/school/stedwards/best-late-night-restaurants-in-austin/\",\"description\":\" Food is important in Texas, and if you havent been here then you dont understand our barbecue ! Twenty-four-hour food is a big deal here in good ole Austin, from higher-end pasta dishes to ratchet and greasy breakfast tacos you can only be drunk to eat. There is something to find at any hour of the day. Whether it be a big night after hanging around West Campus or a place to study after the libra\",\"page_id\":\"bc61ebed1df4e72a864df97e9451e4e16047e44ea8d1b5d15cbb1df7a335c3db8c623d412424178f16713e5a\"}},{\"data\":{\"title\":\"9 Best Study Spots Near UT Austin (Updated for 2026) | Rambler\",\"url\":\"https://www.rambleratx.com/resources/best-study-spots-ut-austin/\",\"description\":\" Home Resour\\n\\n Another amazing coffee shop native to Austin, Civil Goat opened their new Guadalupe location in 2020. This spacious spot has plenty of seating both inside and outdoors, not to mention the delicious d…"
+    }
+  ]
+}

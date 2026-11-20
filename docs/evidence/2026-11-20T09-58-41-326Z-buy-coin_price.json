@@ -1,0 +1,139 @@
+{
+  "tool": "coin_price",
+  "seller": "x402engine",
+  "url": "https://x402engine.app/api/crypto/price?ids=solana%2Cbitcoin&currencies=usd&include_24h_change=true",
+  "ok": true,
+  "amountBase": "1000",
+  "error": null,
+  "pullSignature": "4RC67GUaaN5gTkQUFsezhbPbR8u3SCp2CtgS9SDZHZ75ufegGhHWVJVoXAZL11ZXPAi4T3nAmXWCNyFfSUWEEYid",
+  "paySignature": "5xdT6PNkGPq6Mke6ZkX9BBrzQMz8n3cjNBeoadHawNnJuFeb2u2bv9zow8dZdtX4HuCRmQ2WsfKSdCBU7y9uTE9D",
+  "pullExplorer": "https://explorer.solana.com/tx/4RC67GUaaN5gTkQUFsezhbPbR8u3SCp2CtgS9SDZHZ75ufegGhHWVJVoXAZL11ZXPAi4T3nAmXWCNyFfSUWEEYid",
+  "payExplorer": "https://explorer.solana.com/tx/5xdT6PNkGPq6Mke6ZkX9BBrzQMz8n3cjNBeoadHawNnJuFeb2u2bv9zow8dZdtX4HuCRmQ2WsfKSdCBU7y9uTE9D",
+  "payTo": "Gzehfseq1k9AcHFSoV7qHmDGQx92nLMw78XXdqVWQQWa",
+  "memo": "4443c66914d8a42828c716050431b462",
+  "httpStatus": 200,
+  "responseSha256": "1f391be8fe7edb7751fd0b542c0663e44a6433a83ef34dfc4f9b95e9c65b4044",
+  "responseBytes": 122,
+  "responsePreview": "{\"solana\":{\"usd\":72.06,\"usd_24h_change\":-3.2935110954019318},\"bitcoin\":{\"usd\":61660,\"usd_24h_change\":-3.3773813460614153}}",
+  "before": {
+    "ownerUsdc": "984596",
+    "agentUsdc": "1000",
+    "remaining": "134369"
+  },
+  "after": {
+    "ownerUsdc": "983596",
+    "agentUsdc": "1000",
+    "remaining": "133369"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "97216fc2-23f6-48e5-85c4-1f886a6aa6dc",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "coin_price",
+        "name": "x402engine",
+        "host": "x402engine.app",
+        "url": "https://x402engine.app/api/crypto/price"
+      },
+      "amountBase": "1000",
+      "payTo": "Gzehfseq1k9AcHFSoV7qHmDGQx92nLMw78XXdqVWQQWa",
+      "description": "x402engine — Real-time cryptocurrency prices for any coin in any fiat currency"
+    },
+    {
+      "type": "policy",
+      "purchaseId": "97216fc2-23f6-48e5-85c4-1f886a6aa6dc",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "x402engine is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.001."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.001 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.001 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.001 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.134369 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.001 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "97216fc2-23f6-48e5-85c4-1f886a6aa6dc",
+      "signature": "4RC67GUaaN5gTkQUFsezhbPbR8u3SCp2CtgS9SDZHZ75ufegGhHWVJVoXAZL11ZXPAi4T3nAmXWCNyFfSUWEEYid",
+      "amountBase": "1000",
+      "remainingBase": "133369",
+      "ms": 1698
+    },
+    {
+      "type": "paid",
+      "purchaseId": "97216fc2-23f6-48e5-85c4-1f886a6aa6dc",
+      "signature": "5xdT6PNkGPq6Mke6ZkX9BBrzQMz8n3cjNBeoadHawNnJuFeb2u2bv9zow8dZdtX4HuCRmQ2WsfKSdCBU7y9uTE9D",
+      "httpStatus": 200,
+      "ms": 1407
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "97216fc2-23f6-48e5-85c4-1f886a6aa6dc",
+      "bytes": 122,
+      "sha256": "1f391be8fe7edb7751fd0b542c0663e44a6433a83ef34dfc4f9b95e9c65b4044",
+      "preview": "{\"solana\":{\"usd\":72.06,\"usd_24h_change\":-3.2935110954019318},\"bitcoin\":{\"usd\":61660,\"usd_24h_change\":-3.3773813460614153}}"
+    }
+  ]
+}

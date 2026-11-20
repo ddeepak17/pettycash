@@ -1,0 +1,139 @@
+{
+  "tool": "dex_pools",
+  "seller": "CoinGecko",
+  "url": "https://pro-api.coingecko.com/api/v3/x402/onchain/search/pools?query=jup&network=solana&include=base_token&page=1",
+  "ok": true,
+  "amountBase": "5000",
+  "error": null,
+  "pullSignature": "4ULpdhpqpxMAEGsj96KEm3wfBJvfsLbYeUUkkhvzSZMHHPtwN2WsEK9PX4JGumVTTJwYWqq9y7vXkTJmqgRbiQC6",
+  "paySignature": "tSJnC2isFQAF8XzjZ7K17XfmThacUaiMbj1Qe28uh1XiNai9AHHq17S2Cc5YTx39fkxnHiJPkLDG8hGDioZWZm8",
+  "pullExplorer": "https://explorer.solana.com/tx/4ULpdhpqpxMAEGsj96KEm3wfBJvfsLbYeUUkkhvzSZMHHPtwN2WsEK9PX4JGumVTTJwYWqq9y7vXkTJmqgRbiQC6",
+  "payExplorer": "https://explorer.solana.com/tx/tSJnC2isFQAF8XzjZ7K17XfmThacUaiMbj1Qe28uh1XiNai9AHHq17S2Cc5YTx39fkxnHiJPkLDG8hGDioZWZm8",
+  "payTo": "8XhngTRitTcUJMiaDJ6azw8GRSiFPpwhnmV3HYQLHUpL",
+  "memo": "c48b544c074ce340a6e37496293ab8c3",
+  "httpStatus": 200,
+  "responseSha256": "4dff45814cebf2c94ae74a77f734f26e4843d0d93f8f914e6266ac00d6a64974",
+  "responseBytes": 33510,
+  "responsePreview": "{\"data\":[{\"id\":\"solana_C8Gr6AUuq9hEdSYJzoEpNcdjpojPZwqG5MtQbeouNNwg\",\"type\":\"pool\",\"attributes\":{\"base_token_price_usd\":\"0.22764527682359349579806505211379591756380269701149480000894812\",\"base_token_price_native_currency\":\"0.00316984142814401\",\"quote_token_price_usd\":\"72.15769355919225465585729213276836184704114004\",\"quote_token_price_native_currency\":\"1.0\",\"base_token_price_quote_token\":\"0.003169841428\",\"quote_token_price_base_token\":\"315.47319406\",\"address\":\"C8Gr6AUuq9hEdSYJzoEpNcdjpojPZwqG5MtQbeouNNwg\",\"name\":\"JUP / SOL\",\"pool_created_at\":\"2024-03-19T03:11:43Z\",\"fdv_usd\":\"1559815954.8963\",\"",
+  "before": {
+    "ownerUsdc": "981096",
+    "agentUsdc": "1000",
+    "remaining": "130869"
+  },
+  "after": {
+    "ownerUsdc": "976096",
+    "agentUsdc": "1000",
+    "remaining": "125869"
+  },
+  "events": [
+    {
+      "type": "quote",
+      "purchaseId": "b9baf4e3-e292-4db1-acf0-f1aaa2e1f441",
+      "step": 1,
+      "kind": "tool",
+      "seller": {
+        "id": "dex_pools",
+        "name": "CoinGecko",
+        "host": "pro-api.coingecko.com",
+        "url": "https://pro-api.coingecko.com/api/v3/x402/onchain/search/pools"
+      },
+      "amountBase": "5000",
+      "payTo": "8XhngTRitTcUJMiaDJ6azw8GRSiFPpwhnmV3HYQLHUpL",
+      "description": "Search onchain DEX pools and token, by contract address, name, or token symbol."
+    },
+    {
+      "type": "policy",
+      "purchaseId": "b9baf4e3-e292-4db1-acf0-f1aaa2e1f441",
+      "decision": "allow",
+      "checks": [
+        {
+          "rule": "Fixed price",
+          "pass": true,
+          "detail": "The seller quoted one fixed price."
+        },
+        {
+          "rule": "Right network",
+          "pass": true,
+          "detail": "Payment is on the expected Solana network."
+        },
+        {
+          "rule": "Right token",
+          "pass": true,
+          "detail": "Payment is in USDC."
+        },
+        {
+          "rule": "Known seller",
+          "pass": true,
+          "detail": "CoinGecko is on the approved list."
+        },
+        {
+          "rule": "Price above zero",
+          "pass": true,
+          "detail": "The price is $0.005."
+        },
+        {
+          "rule": "Same recipient as before",
+          "pass": true,
+          "detail": "The money goes to the wallet this seller has always used."
+        },
+        {
+          "rule": "Usual price",
+          "pass": true,
+          "detail": "$0.005 is within this seller's usual price."
+        },
+        {
+          "rule": "Per-purchase ceiling",
+          "pass": true,
+          "detail": "$0.005 is under the $0.05 ceiling for one purchase."
+        },
+        {
+          "rule": "Budget for this errand",
+          "pass": true,
+          "detail": "$0.005 of $0.06 for this errand."
+        },
+        {
+          "rule": "Petty cash still exists",
+          "pass": true,
+          "detail": "The petty cash exists onchain."
+        },
+        {
+          "rule": "Petty cash not expired",
+          "pass": true,
+          "detail": "The petty cash is still valid."
+        },
+        {
+          "rule": "Enough petty cash left",
+          "pass": true,
+          "detail": "$0.130869 is left onchain."
+        },
+        {
+          "rule": "Small enough to buy without asking",
+          "pass": true,
+          "detail": "$0.005 is under the $0.01 ask-first line."
+        }
+      ]
+    },
+    {
+      "type": "pulled",
+      "purchaseId": "b9baf4e3-e292-4db1-acf0-f1aaa2e1f441",
+      "signature": "4ULpdhpqpxMAEGsj96KEm3wfBJvfsLbYeUUkkhvzSZMHHPtwN2WsEK9PX4JGumVTTJwYWqq9y7vXkTJmqgRbiQC6",
+      "amountBase": "5000",
+      "remainingBase": "125869",
+      "ms": 1345
+    },
+    {
+      "type": "paid",
+      "purchaseId": "b9baf4e3-e292-4db1-acf0-f1aaa2e1f441",
+      "signature": "tSJnC2isFQAF8XzjZ7K17XfmThacUaiMbj1Qe28uh1XiNai9AHHq17S2Cc5YTx39fkxnHiJPkLDG8hGDioZWZm8",
+      "httpStatus": 200,
+      "ms": 1596
+    },
+    {
+      "type": "delivered",
+      "purchaseId": "b9baf4e3-e292-4db1-acf0-f1aaa2e1f441",
+      "bytes": 33510,
+      "sha256": "4dff45814cebf2c94ae74a77f734f26e4843d0d93f8f914e6266ac00d6a64974",
+      "preview": "{\"data\":[{\"id\":\"solana_C8Gr6AUuq9hEdSYJzoEpNcdjpojPZwqG5MtQbeouNNwg\",\"type\":\"pool\",\"attributes\":{\"base_token_price_usd\":\"0.22764527682359349579806505211379591756380269701149480000894812\",\"base_token_price_native_currency\":\"0.00316984142814401\",\"quote_token_price_usd\":\"72.15769355919225465585729213276836184704114004\",\"quote_token_price_native_currency\":\"1.0\",\"base_token_price_quote_token\":\"0.003169841428\",\"quote_token_price_base_token\":\"315.47319406\",\"address\":\"C8Gr6AUuq9hEdSYJzoEpNcdjpojPZwqG5MtQbeouNNwg\",\"name\":\"JUP / SOL\",\"pool_created_at\":\"2024-03-19T03:11:43Z\",\"fdv_usd\":\"1559815954.8963\",\"market_cap_usd\":\"754589502.582269\",\"price_change_percentage\":{\"m5\":\"0\",\"m15\":\"0\",\"m30\":\"-0.506\",\"h1\":\"-0.629\",\"h6\":\"-2.966\",\"h24\":\"-14.751\"},\"transactions\":{\"m5\":{\"buys\":0,\"sells\":0,\"buyers\":0,\"sellers\":0,\"unique_traders\":0},\"m15\":{\"buys\":0,\"sells\":0,\"buyers\":0,\"sellers\":0,\"unique_traders\":0},\"m30\":{\"buys\":19,\"sells\":65,\"buyers\":12,\"sellers\":17,\"unique_traders\":27},\"h1\":{\"buys\":95,\"sells\":95,\"buyers\":36,\"sellers\":27,\"unique_traders\":58},\"h6\":{\"buys\":407,\"sells\":501,\"buyers\":102,\"sellers\":103,\"unique_traders\":188},\"h24\":{\"buys\":1293,\"sells\":1807,\"buyers\":472,\"sellers\":350,\"unique_traders\":754}}…"
+    }
+  ]
+}
