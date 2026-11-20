@@ -26,7 +26,7 @@ export const network = () => env("X402_NETWORK_OVERRIDE") ?? clusterInfo().netwo
 export const rpcUrls = (): string[] => {
   const v = env("RPC_URLS");
   if (v) return v.split(",").map((s) => s.trim()).filter(Boolean);
-  return cluster() === "devnet" ? ["https://api.devnet.solana.com"] : ["https://api.mainnet-beta.solana.com", "https://solana-rpc.publicnode.com"];
+  return cluster() === "devnet" ? ["https://api.devnet.solana.com"] : ["https://api.mainnet-beta.solana.com", "https://api.mainnet.solana.com", "https://public.rpc.solanavibestation.com"];
 };
 
 let cachedAgent: Keypair | null = null;
