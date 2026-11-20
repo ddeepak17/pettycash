@@ -237,22 +237,42 @@ async function historySincePull(c: Connection, p: PurchaseRow, commitment: "conf
   return out;
 }
 
+type TokenBalance = { owner?: string; mint: string; uiTokenAmount: { amount: string } };
+type TxMeta = { err: unknown; logs: string[]; pre: TokenBalance[]; post: TokenBalance[] };
+
+/** Reads one transaction's result straight from the RPC as JSON. We only need its outcome, logs and token balances,
+ *  so this does not depend on the client library understanding the transaction's message format. Sellers'
+ *  facilitators settle some payments as version 1 transactions, which older client code refuses to decode. */
+async function transactionMeta(c: Connection, signature: string): Promise<TxMeta | null | "unknown"> {
+  try {
+    const res = await fetch(c.rpcEndpoint, {
+      method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(15_000),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [signature, { commitment: "confirmed", maxSupportedTransactionVersion: 1, encoding: "json" }] }),
+    });
+    if (!res.ok) return "unknown";
+    const j = (await res.json()) as { error?: unknown; result?: { meta?: { err: unknown; logMessages?: string[]; preTokenBalances?: TokenBalance[]; postTokenBalances?: TokenBalance[] } } | null };
+    if (j.error) return "unknown";
+    if (!j.result || !j.result.meta) return null;
+    const m = j.result.meta;
+    return { err: m.err, logs: m.logMessages ?? [], pre: m.preTokenBalances ?? [], post: m.postTokenBalances ?? [] };
+  } catch { return "unknown"; }
+}
+
 /** Decides whether one transaction is exactly this purchase's payment: it succeeded, it carries this purchase's own
  *  note, the agent's holdings of the token fell by the amount and the recipient's rose by it. `listed` means the
  *  chain's own history named the signature, so "not found" from a node is treated as unknown, never as no. */
 async function isThePayment(c: Connection, signature: string, p: PurchaseRow, listed: boolean): Promise<boolean | "unknown"> {
-  let tx;
-  try { tx = await c.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 }); } catch { return "unknown"; }
-  if (!tx || !tx.meta) return listed ? "unknown" : false;
-  if (tx.meta.err) return false;
-  const meta = tx.meta;
+  const meta = await transactionMeta(c, signature);
+  if (meta === "unknown") return "unknown";
+  if (!meta) return listed ? "unknown" : false;
+  if (meta.err) return false;
   if (p.pay_memo) {
-    const memos = (meta.logMessages ?? []).flatMap((l) => { const m = /Memo \(len \d+\): "(.*)"$/.exec(l); return m ? [m[1]] : []; });
+    const memos = meta.logs.flatMap((l) => { const m = /Memo \(len \d+\): "(.*)"$/.exec(l); return m ? [m[1]] : []; });
     if (!memos.includes(p.pay_memo)) return false;
   }
   const agent = agentPublicKey().toBase58();
-  const sum = (list: typeof meta.preTokenBalances, owner: string) => (list ?? []).filter((b) => b.owner === owner && b.mint === p.mint).reduce((n, b) => n + BigInt(b.uiTokenAmount.amount), 0n);
-  const delta = (owner: string) => sum(meta.postTokenBalances, owner) - sum(meta.preTokenBalances, owner);
+  const sum = (list: TokenBalance[], owner: string) => list.filter((b) => b.owner === owner && b.mint === p.mint).reduce((n, b) => n + BigInt(b.uiTokenAmount.amount), 0n);
+  const delta = (owner: string) => sum(meta.post, owner) - sum(meta.pre, owner);
   const amount = BigInt(p.amount_base);
   return delta(agent) === -amount && delta(p.pay_to) === amount;
 }
