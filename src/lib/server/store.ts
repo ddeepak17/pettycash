@@ -135,3 +135,13 @@ export async function getArtifact(purchaseId: string): Promise<{ contentType: st
   const [row] = await sql()`select content_type, bytes from pettycash.artifacts where purchase_id = ${purchaseId}`;
   return row ? { contentType: row.content_type as string, bytes: row.bytes as Buffer } : null;
 }
+
+/** Takes exclusive ownership of a purchase's refund. Only one caller gets true, so money is never returned twice. */
+export async function claimRefund(id: string): Promise<boolean> {
+  const rows = await sql()`update pettycash.purchases set status = 'refunding', updated_at = now() where id = ${id} and status in ('refund_pending', 'pulled') and refund_sig is null returning id`;
+  return rows.length === 1;
+}
+/** Releases stale claims (a process that stopped mid-refund) so they are retried. */
+export async function releaseStaleRefundClaims() {
+  await sql()`update pettycash.purchases set status = 'refund_pending', unresolved_until = now() where status = 'refunding' and refund_sig is null and updated_at < now() - interval '3 minutes'`;
+}

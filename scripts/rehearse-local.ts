@@ -88,6 +88,24 @@ async function main() {
   record("C. money returns to the owner only after the payment can no longer land", early.refunded === 0 && late.refunded === 1 && (await bal(owner.publicKey)) === before && (await bal(agent.publicKey)) === 0n,
     `early=${JSON.stringify(early)} late=${JSON.stringify(late)} owner=${await bal(owner.publicKey)}`);
 
+  // C2. The dangerous case: the seller took the money, failed, and reported nothing. Refunding here would pay twice.
+  const ownerC2 = await bal(owner.publicKey), sellerC2 = await bal(sellerWallet.publicKey);
+  const c2 = await purchase(ctx(), target("/silent"));
+  await new Promise((r) => setTimeout(r, 2000));
+  const c2settle = await settleUnresolved(owner.publicKey.toBase58());
+  const c2row = c2.purchaseId ? await getPurchase(c2.purchaseId) : null;
+  record("C2. a payment that silently landed is found onchain by its memo and is never refunded",
+    !c2.ok && c2settle.foundPaid === 1 && c2settle.refunded === 0 && c2row?.status === "paid" && !!c2row.pay_sig && c2row.refund_sig === null
+      && (await bal(owner.publicKey)) === ownerC2 - 1000n && (await bal(sellerWallet.publicKey)) === sellerC2 + 1000n && (await bal(agent.publicKey)) === 0n,
+    `settle=${JSON.stringify(c2settle)} status=${c2row?.status} paySig=${c2row?.pay_sig?.slice(0, 10)}…`);
+  // C3. Two reconcilers at once must not return the same money twice.
+  const ownerC3 = await bal(owner.publicKey);
+  const c3 = await purchase(ctx(), target("/ghost"));
+  await new Promise((r) => setTimeout(r, 2000));
+  const both = await Promise.all([settleUnresolved(owner.publicKey.toBase58()), settleUnresolved(owner.publicKey.toBase58())]);
+  record("C3. two reconcilers running together refund once", !c3.ok && both[0].refunded + both[1].refunded === 1 && (await bal(owner.publicKey)) === ownerC3 && (await bal(agent.publicKey)) === 0n,
+    `refunds=${both[0].refunded}+${both[1].refunded} owner=${await bal(owner.publicKey)} agent=${await bal(agent.publicKey)}`);
+
   // D. Above the per-purchase ceiling: stopped by the rule check; no money moves.
   mark = events.length;
   const ownerBefore = await bal(owner.publicKey);

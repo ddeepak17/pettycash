@@ -11,10 +11,11 @@ import { decodePaymentSignatureHeader, encodePaymentRequiredHeader, encodePaymen
 export type LocalSellerOptions = { rpcUrl: string; network: string; mint: PublicKey; payTo: PublicKey; feePayer: Keypair; port?: number };
 export type LocalSeller = { url: string; close: () => Promise<void>; settled: string[]; brainScript: unknown[]; brainCalls: unknown[] };
 
-type Route = { price: string; description: string; behaviour: "deliver" | "fail_after_settle" | "never_settle" | "brain" };
+type Route = { price: string; description: string; behaviour: "deliver" | "fail_after_settle" | "fail_silently_after_settle" | "never_settle" | "brain" };
 const ROUTES: Record<string, Route> = {
   "/search": { price: "1000", description: "Local test search", behaviour: "deliver" },
   "/broken": { price: "1000", description: "Local test seller that takes payment and then fails", behaviour: "fail_after_settle" },
+  "/silent": { price: "1000", description: "Local test seller that takes payment, fails, and does not report the settlement", behaviour: "fail_silently_after_settle" },
   "/ghost": { price: "1000", description: "Local test seller that never settles the payment", behaviour: "never_settle" },
   "/pricey": { price: "900000", description: "Local test seller with a high price", behaviour: "deliver" },
   "/ask": { price: "20000", description: "Local test seller above the ask-first line", behaviour: "deliver" },
@@ -69,6 +70,7 @@ export async function startLocalSeller(o: LocalSellerOptions): Promise<LocalSell
       return;
     }
     const paid = { "PAYMENT-RESPONSE": encodePaymentResponseHeader({ success: true, transaction: signature, network: o.network, payer: "local" } as never) };
+    if (route.behaviour === "fail_silently_after_settle") { res.writeHead(500, { "content-type": "application/json" }).end(JSON.stringify({ error: "the seller failed and reported nothing" })); return; }
     if (route.behaviour === "fail_after_settle") { res.writeHead(500, { "content-type": "application/json", ...paid }).end(JSON.stringify({ error: "the seller failed after taking payment" })); return; }
     if (route.behaviour === "brain") {
       state.brainCalls.push(JSON.parse(body || "{}"));

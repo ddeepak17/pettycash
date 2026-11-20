@@ -11,7 +11,7 @@ import type { RunEvent, SellerRef } from "../types";
 import { agentKeypair, agentPublicKey, cluster, network, usdcMint } from "../server/config";
 import { ChainRefused, pull, readAllowance, refund } from "../server/agentWallet";
 import { primaryRpcUrl, read } from "../server/rpc";
-import { insertPurchase, updatePurchase, waitForApproval, setRunStatus, unresolvedPurchases, saveArtifact, type PurchaseRow } from "../server/store";
+import { insertPurchase, updatePurchase, waitForApproval, setRunStatus, unresolvedPurchases, saveArtifact, claimRefund, releaseStaleRefundClaims, type PurchaseRow } from "../server/store";
 import { ata } from "../solana/allowances";
 import { decide, type PolicyDecision } from "./policy";
 
@@ -153,13 +153,9 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
 
   if (!paid.sent) {
     // The payment never left, so nobody else holds a signed transfer: giving the money back now is safe.
-    const back = await refund(ctx.owner, amount).catch(() => null);
-    if (back) {
-      await updatePurchase(purchaseId, { status: "refunded", refund_sig: back.signature, error: paid.error });
-      return failed("payment", paid.error ?? "The payment could not be sent.", { refund: { status: "refunded", signature: back.signature } });
-    }
     await updatePurchase(purchaseId, { status: "refund_pending", error: paid.error, unresolved_until: new Date() });
-    return failed("payment", paid.error ?? "The payment could not be sent.", { refund: { status: "pending" } });
+    const back = await refundPurchase(purchaseId, ctx.owner, amount);
+    return failed("payment", paid.error ?? "The payment could not be sent.", { refund: back ? { status: "refunded", signature: back } : { status: "pending" } });
   }
 
   const delivered = paid.httpStatus !== null && paid.httpStatus >= 200 && paid.httpStatus < 300;
@@ -187,8 +183,23 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   return failed("payment", `${paid.error ?? "The seller did not confirm the payment."} If the payment did not go through, the money returns to the wallet within a few minutes.`, { refund: { status: "pending" } });
 }
 
+/** Returns a purchase's money to its owner exactly once. Returns the refund signature, or null if someone else is
+ *  already handling it or the transfer failed (it is then retried by the reconciler). */
+async function refundPurchase(purchaseId: string, owner: PublicKey, amount: bigint): Promise<string | null> {
+  if (!(await claimRefund(purchaseId))) return null;
+  try {
+    const back = await refund(owner, amount);
+    await updatePurchase(purchaseId, { status: "refunded", refund_sig: back.signature });
+    return back.signature;
+  } catch {
+    await updatePurchase(purchaseId, { status: "refund_pending", unresolved_until: new Date(Date.now() + 30_000) });
+    return null;
+  }
+}
+
 /** Settles purchases whose outcome was unclear: if the payment landed, record it; if it can no longer land, return the money. */
 export async function settleUnresolved(owner?: string): Promise<{ checked: number; refunded: number; foundPaid: number }> {
+  await releaseStaleRefundClaims().catch(() => {});
   const rows: PurchaseRow[] = await unresolvedPurchases(owner);
   let refunded = 0, foundPaid = 0;
   const agentAta = ata(agentPublicKey(), usdcMint());
@@ -198,18 +209,19 @@ export async function settleUnresolved(owner?: string): Promise<{ checked: numbe
     if (p.status === "pulled" && Date.now() - new Date(p.created_at).getTime() < STALE_PULL_MS) continue;
     // Look for the payment by its random memo among the agent token account's recent transactions.
     let landed: string | null = null;
-    if (p.pay_memo) {
-      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 200 }, "confirmed")).catch(() => null);
+    if (p.status !== "pulled") {
+      // A payment was signed. Without its memo we cannot tell whether it landed, so we never refund on a guess.
+      if (!p.pay_memo) continue;
+      const sigs = await read((c) => c.getSignaturesForAddress(agentAta, { limit: 500 }, "confirmed")).catch(() => null);
       if (sigs === null) continue; // could not check: try again later rather than risk a double payment
       landed = sigs.find((s) => !s.err && s.memo?.includes(p.pay_memo!))?.signature ?? null;
     }
     if (landed) {
-      await updatePurchase(p.id, { status: "paid", pay_sig: landed, error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` });
+      await updatePurchase(p.id, { status: "paid", pay_sig: landed, unresolved_until: null, error: `${p.error ?? "The seller did not deliver."} The payment did reach the seller.` });
       foundPaid++;
       continue;
     }
-    const back = await refund(new PublicKey(p.owner), BigInt(p.amount_base)).catch(() => null);
-    if (back) { await updatePurchase(p.id, { status: "refunded", refund_sig: back.signature }); refunded++; }
+    if (await refundPurchase(p.id, new PublicKey(p.owner), BigInt(p.amount_base))) refunded++;
   }
   return { checked: rows.length, refunded, foundPaid };
 }
