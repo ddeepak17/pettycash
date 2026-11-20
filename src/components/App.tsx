@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatUsd } from "@/lib/solana/cluster";
 import type { Allowance, AllowanceState } from "@/lib/types";
 import * as api from "@/lib/client/api";
@@ -43,6 +43,14 @@ export default function App() {
   }, [address]);
   useEffect(() => { setState(null); setSelectedAddr(null); void loadState(); }, [loadState]);
 
+  // When a new petty cash appears (the person just set one aside), show that one.
+  const known = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!state) { known.current = null; return; }
+    const now = new Set(state.allowances.filter((a) => !a.expired).map((a) => a.address));
+    if (known.current) { const fresh = [...now].find((a) => !known.current!.has(a)); if (fresh) setSelectedAddr(fresh); }
+    known.current = now;
+  }, [state]);
   const live = (state?.allowances ?? []).filter((a) => !a.expired);
   const selected: Allowance | null = live.find((a) => a.address === selectedAddr) ?? live[0] ?? null;
 

@@ -67,7 +67,7 @@ async function main() {
       await page.goto(base, { waitUntil: "networkidle" });
       await page.getByRole("button", { name: "Connect wallet" }).click();
       await page.getByRole("button", { name: /Test Wallet/ }).click();
-      await page.getByText("Your petty cash").waitFor({ timeout: 30_000 });
+      await page.getByRole("complementary", { name: "Your petty cash" }).waitFor({ timeout: 30_000 });
       await snap(page, "connected");
       await page.getByRole("button", { name: /Set aside petty cash|New petty cash/ }).click();
       const input = page.getByRole("dialog").locator("input").first();

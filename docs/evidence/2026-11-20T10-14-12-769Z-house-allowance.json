@@ -1,0 +1,12 @@
+{
+  "kind": "house",
+  "allowance": "4wKoPjtzmWCKLztKxG7vR56yyGG1pqS7NGCPjahfXYVH",
+  "owner": "DhrxJqnfTEpgvak87D25SSkwacfpbv3p4gWi94JCqNPb",
+  "agent": "5SAtLdgB7VnhbTBJGjKs4HkYKNjPC4Dnhx6FLVu4Jtz9",
+  "signatures": {
+    "create": "3gkrTKD11XEDaduLLNccLU54nDAoc1uaZho11pJ5bwrBa6JSeoqwKbivEvHfx6i3vMkLsvYULjGFudZsjfqHKWHC"
+  },
+  "explorer": {
+    "create": "https://explorer.solana.com/tx/3gkrTKD11XEDaduLLNccLU54nDAoc1uaZho11pJ5bwrBa6JSeoqwKbivEvHfx6i3vMkLsvYULjGFudZsjfqHKWHC"
+  }
+}

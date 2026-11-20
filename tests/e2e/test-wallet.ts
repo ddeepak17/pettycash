@@ -11,6 +11,8 @@ export async function installTestWallet(page: Page, keypair: Keypair, opts: { na
     log(`wallet asked to sign: ${what}`);
     return Buffer.from(nacl.sign.detached(Buffer.from(messageB64, "base64"), keypair.secretKey)).toString("base64");
   });
+  // tsx compiles function bodies with a `__name` helper that does not exist in the page.
+  await page.addInitScript("window.__name = window.__name || ((f) => f);");
   await page.addInitScript(({ address, publicKey, name }) => {
     const b64 = (u: Uint8Array) => { let s = ""; u.forEach((b) => (s += String.fromCharCode(b))); return btoa(s); };
     const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
