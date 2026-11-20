@@ -20,7 +20,7 @@ Set aside a few dollars for an AI agent. It pays real x402 sellers in USDC on So
 
 <!-- EVIDENCE:deployed-url -->
 
-Pending: the deployed URL. The repository link and the video link are added on the form.
+Live app: https://pettycash-pink.vercel.app. The repository link and the video link are added on the form.
 
 ## What did you build?
 
@@ -32,7 +32,7 @@ Agents are starting to pay for things, and the usual options are bad. Give the a
 
 ## How does it work?
 
-For each purchase the server first asks the seller for a price without paying. A deterministic rule check compares the quote with an approved seller list, the pinned recipient wallet, a per-purchase ceiling and the errand budget, and asks the owner above one cent. The agent's key then pulls exactly that price from the owner's wallet under the allowance. The program refuses anything above what is left. Before the signed payment leaves our process, code confirms it is exactly one USDC transfer of the quoted amount to the quoted recipient. The seller's facilitator settles it. A QuickNode Stream on Solana mainnet delivers every transaction involving the agent's key to a webhook, and a receipt is marked verified only when the Stream's token movements match the quote. If a payment does not complete, the money is returned.
+For each purchase the server first asks the seller for a price without paying. A deterministic rule check compares the quote with an approved seller list, the pinned recipient wallet, a per-purchase ceiling and the errand budget, and asks the owner above one cent. The payment is then built, signed and checked before any money moves: code confirms it is exactly one USDC transfer of the quoted amount to the quoted recipient. Only then does the agent's key pull exactly that price from the owner's wallet under the allowance. The program refuses anything above what is left. The seller's facilitator settles the payment. A seller's own word is not proof: the purchase stays open until our read of the chain finds that exact payment, and if it can never land the money is returned, exactly once. A QuickNode Stream on Solana mainnet delivers every transaction involving the agent's key to a webhook, and a receipt is marked verified only when the Stream's token movements match the quote.
 
 ## What makes it unique?
 

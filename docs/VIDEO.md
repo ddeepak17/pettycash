@@ -6,7 +6,7 @@ Every shot is something the product does. Words in quotation marks under "On scr
 
 ## Before recording
 
-- The app is deployed and the top bar shows "Real USDC on Solana mainnet" and "Stream live".
+- The app is deployed and the top bar shows "Real USDC on Solana mainnet". The Stream label reads "Stream resting until the next errand" until an errand starts, then "Stream live".
 - The house petty cash has budget left. The card "Try it now, on us" is visible.
 - A browser wallet (Phantom, Solflare or Backpack) holds a few dollars of USDC and a little SOL for network fees.
 - That wallet has already done the one-time setup, so setting aside takes one wallet approval. To do the setup, set aside any small amount once and revoke it.
@@ -29,7 +29,7 @@ Every shot is something the product does. Words in quotation marks under "On scr
 ## Notes for each shot
 
 - **Shot 2.** Which tools the agent buys is its own choice, so the sellers and prices on screen may differ from one take to the next. Do not name a seller or a price in the narration unless it is on screen in that take. The line "Budget for this errand" shows the house limit for one errand.
-- **Shot 3.** The stamp appears when the Stream's delivery arrives, usually within seconds of the payment. If "Stream not delivering" shows in the top bar, stop and fix the Stream before recording. Do not record a take in which no receipt is stamped.
+- **Shot 3.** The stamp appears when the Stream's delivery arrives, usually within seconds of the payment. If receipts stay at "Paid. Waiting for independent confirmation." for more than a minute, stop and fix the Stream before recording. Do not record a take in which no receipt is stamped.
 - **Shot 4.** The first time a wallet sets aside petty cash, it signs two transactions: the one-time setup and the set-aside. Doing the setup before recording keeps this shot to one approval. The sign-in message is free and is not a transaction. It may also be asked for in shot 5 instead, if the wallet was not signed in.
 - **Shot 5.** Image generation always asks first. The reason shown in the box is "$0.03 is over the $0.01 ask-first line." If the agent does not choose the image tool, repeat the take. When the seller returns the image inline, it is shown under "Came back". If it is not shown, keep the take and do not claim in the narration that an image is visible.
 - **Shot 6.** The amount in "We asked the chain to pull" is exactly one base unit of USDC above what is left. One base unit is $0.000001.

@@ -1,8 +1,9 @@
 // What the agent's key can do onchain: pull an exact amount under a petty cash, give money back, and (for the
 // "test the limit" button) ask the chain to refuse an oversized pull. Nothing here can move more than the
 // Allowances program permits: the program, not this file, enforces the limit.
-import { ComputeBudgetProgram, PublicKey, type TransactionInstruction } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { createAssociatedTokenAccountIdempotentInstruction, createTransferCheckedInstruction } from "@solana/spl-token";
+import { randomUUID } from "node:crypto";
 import { ALLOWANCES_ERRORS, allowancesErrorCode, ata, ixTransferFixed, ixTransferRecurring, readDelegation, readSaInitId, subscriptionAuthorityPda, ALLOWANCES_PROGRAM_ID, type DelegationView } from "../solana/allowances";
 import { USDC_DECIMALS } from "../solana/cluster";
 import type { Allowance, AllowanceState, ProofResult } from "../types";
@@ -87,14 +88,20 @@ const pullIx = (a: LiveAllowance, amount: bigint) => {
 /** Moves exactly `amount` from the owner's wallet to the agent under the petty cash. Throws ChainRefused when the program says no. */
 type OnSigned = (signature: string, lastValidBlockHeight: number) => Promise<void>;
 
+const MEMO_PROGRAM = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+/** A note that makes a transaction unique. Two transactions with the same instructions and the same recent blockhash
+ *  are byte-identical: they share one signature and the chain runs them once. Two pulls or two refunds of the same
+ *  amount for the same wallet, built in the same moment, would otherwise collapse into one while both were recorded. */
+const note = (text: string) => new TransactionInstruction({ programId: MEMO_PROGRAM, keys: [], data: Buffer.from(text, "utf8") });
+
 /** Moves exactly `amount` from the owner's wallet to the agent under the petty cash. Throws ChainRefused when the program says no.
  *  `onSigned` runs before the transaction is broadcast, so its signature is on record before it can land. */
-export async function pull(allowance: LiveAllowance, amount: bigint, onSigned?: OnSigned): Promise<{ signature: string; slot: number; ms: number }> {
+export async function pull(allowance: LiveAllowance, amount: bigint, onSigned?: OnSigned, reference: string = randomUUID()): Promise<{ signature: string; slot: number; ms: number }> {
   const agent = agentKeypair();
   const mint = usdcMint();
   try {
     return await sendAndConfirm(
-      [...budget(90_000), createAssociatedTokenAccountIdempotentInstruction(agent.publicKey, ata(agent.publicKey, mint), agent.publicKey, mint), pullIx(allowance, amount)],
+      [...budget(110_000), createAssociatedTokenAccountIdempotentInstruction(agent.publicKey, ata(agent.publicKey, mint), agent.publicKey, mint), pullIx(allowance, amount), note(`pettycash:pull:${reference}`)],
       agent.publicKey, [agent], { onSigned },
     );
   } catch (e) {
@@ -103,11 +110,11 @@ export async function pull(allowance: LiveAllowance, amount: bigint, onSigned?: 
 }
 
 /** Returns `amount` from the agent to the owner's own token account. Used when a purchase did not complete. */
-export async function refund(owner: PublicKey, amount: bigint, onSigned?: OnSigned): Promise<{ signature: string; slot: number; ms: number }> {
+export async function refund(owner: PublicKey, amount: bigint, onSigned?: OnSigned, reference: string = randomUUID()): Promise<{ signature: string; slot: number; ms: number }> {
   const agent = agentKeypair();
   const mint = usdcMint();
   return sendAndConfirm(
-    [...budget(40_000), createTransferCheckedInstruction(ata(agent.publicKey, mint), mint, ata(owner, mint), agent.publicKey, amount, USDC_DECIMALS)],
+    [...budget(60_000), createTransferCheckedInstruction(ata(agent.publicKey, mint), mint, ata(owner, mint), agent.publicKey, amount, USDC_DECIMALS), note(`pettycash:refund:${reference}`)],
     agent.publicKey, [agent], { onSigned },
   );
 }
@@ -125,7 +132,7 @@ export async function proveOverspend(address: PublicKey, send: boolean): Promise
   // One base unit more than can ever be allowed right now. For a recurring petty cash that is the whole period amount
   // plus one, so the test stays valid even if a new period starts while it runs.
   const attempt = (allowance.view.type === "recurring" ? allowance.view.amountPerPeriod : allowance.remaining) + 1n;
-  const ixs = [...budget(90_000), pullIx(allowance, attempt)];
+  const ixs = [...budget(110_000), pullIx(allowance, attempt), note(`pettycash:limit-test:${randomUUID()}`)];
   const result = (refused: boolean, code: number | null, name: string, plain: string, signature: string | null, logs: string[]): ProofResult =>
     ({ attemptedBase: attempt.toString(), remainingBase: allowance.remaining.toString(), refused, code, name, plain, signature, logs: logs.slice(-12) });
   if (!send) {

@@ -128,3 +128,6 @@ alter table pettycash.purchases add column if not exists attempts int not null d
 create unique index if not exists purchases_pay_sig_unique on pettycash.purchases (pay_sig) where pay_sig is not null;
 create index if not exists purchases_open_idx on pettycash.purchases (updated_at) where settled_at is null and refund_sig is null and pull_sig is not null;
 alter table pettycash.purchases add column if not exists pay_last_valid_height bigint;    -- once a FINALIZED block is past this height, the signed payment can never land
+-- One transaction can belong to one purchase only. These make a shared signature impossible to record twice.
+create unique index if not exists purchases_pull_sig_unique on pettycash.purchases (pull_sig) where pull_sig is not null;
+create unique index if not exists purchases_refund_sig_unique on pettycash.purchases (refund_sig) where refund_sig is not null;

@@ -79,12 +79,13 @@ sequenceDiagram
             P->>B: approve or deny
             B->>S: the answer
         end
+        S->>S: build and sign the payment, check it is exactly the quote (nothing sent yet)
         S->>A: pull exactly the price under the allowance, signed by the agent key
         A-->>S: USDC moves from owner to agent, or the program refuses
-        S->>S: check that the signed payment is exactly the quote
         S->>X: same request with the signed USDC transfer attached
         X->>A: facilitator pays the fee and submits the transfer from agent to seller
         X-->>S: result and settlement report
+        S->>A: read the chain: did exactly that payment land? If it never can, return the money
         S-->>B: quote, rule check, both signatures, result
     end
     A-->>Q: mainnet blocks
@@ -97,10 +98,13 @@ In words, for every purchase (`src/lib/agent/purchase.ts`):
 
 1. **Quote.** The server sends the request without payment. The seller answers HTTP 402 with a price, a token and a recipient. Nothing is signed or paid.
 2. **Rule check.** Deterministic code compares the quote with the catalog and the limits, using the live onchain state of the petty cash. The result is allow, ask or deny.
-3. **Ask.** If the answer is "ask", the errand pauses for up to 90 seconds until the owner approves or denies. On the house petty cash nobody can approve, so "ask" means no.
-4. **Pull.** The agent's key pulls exactly the quoted amount from the owner's wallet into its own token account. The Allowances program decides whether this is allowed.
-5. **Pay.** The x402 SDK builds the payment. Before it leaves the process, our code decodes the signed transaction and refuses it unless it is exactly the quoted transfer. The seller's facilitator pays the network fee and submits it.
-6. **Record or return.** The response is recorded with its size and SHA-256 hash. If the payment was never sent, or can no longer land, the money goes back to the owner's wallet. If the seller took the payment and failed to deliver, that is recorded as paid and not delivered. x402 has no refund from a seller.
+3. **Ask.** If the answer is "ask", the errand pauses for up to 60 seconds until the owner approves or denies. On the house petty cash nobody can approve, so "ask" means no.
+4. **Build the payment first.** The x402 SDK builds and signs the payment. Our code decodes the signed transaction and refuses it unless it is exactly the quoted transfer. Nothing is sent and no balance is needed, so if a payment cannot be built, no money ever moves.
+5. **Pull.** The agent's key pulls exactly the quoted amount from the owner's wallet into its own token account. The Allowances program decides whether this is allowed. The pull's signature, the payment's memo and the last block height at which the payment could land are written down before the pull is broadcast.
+6. **Pay.** The request is sent again with the payment attached. The seller's facilitator pays the network fee and submits it.
+7. **Confirm from the chain, or return the money.** A seller's HTTP 200 or settlement report is not treated as proof of payment. The purchase stays open until our own read of the chain finds that exact payment (it succeeded, the agent's balance fell by the amount, the pinned recipient's rose by it). If no such payment exists and a finalized block is past the last height at which it could land, the money goes back to the owner's wallet, exactly once. If the seller took the payment and failed to deliver, that is recorded as paid and not delivered. x402 has no refund from a seller.
+
+Every pull and refund carries a unique note, so two transactions for the same amount can never collapse into one.
 
 The Stream then delivers both transactions to our webhook, and only then can the receipt say verified.
 
@@ -149,7 +153,7 @@ Default limits (`src/lib/server/config.ts`):
 | Ask-first line | $0.01 | `APPROVAL_THRESHOLD_BASE` |
 | Budget for one errand | $0.25 on your own petty cash, $0.03 on the house petty cash, never more than what is left | `RUN_BUDGET_BASE`, `HOUSE_RUN_BUDGET_BASE` |
 | Steps in one errand | 6 | `MAX_STEPS` |
-| Time to answer an approval | 90 seconds, then the answer is no | `APPROVAL_WAIT_MS` |
+| Time to answer an approval | 60 seconds, then the answer is no | `APPROVAL_WAIT_MS` |
 | House demo rate | 4 errands per hour per IP address, 40 per hour in total | `HOUSE_RUNS_PER_HOUR_PER_IP`, `HOUSE_RUNS_PER_HOUR` |
 
 The full threat model is in [docs/TRUST.md](docs/TRUST.md).
@@ -244,7 +248,11 @@ What we add, as far as we could find:
 - **No refund from a seller.** If a seller takes the payment and fails to deliver, x402 gives no way to get it back. We record it as paid and not delivered.
 - **Delivered means the seller answered.** We record the size and hash of what came back. We do not judge its quality.
 - **Verification follows the Stream.** If the Stream is paused or late, a receipt stays unverified until the delivery arrives.
-- **No professional audit.** Our code has had automated tests and AI-assisted review only.
+- **An unclear payment takes minutes to settle.** When a seller fails or goes quiet after a payment was sent, the money is returned only after the chain shows the payment can never land, about two to three minutes. If the RPC node's history does not reach back to the pull, we do not guess and do not refund automatically.
+- **Every purchase costs the operator a network fee.** Each purchase needs one extra Solana transaction, the pull, paid by the agent's key: about $0.0004 at 2026-11-20 prices. That is a large share of a $0.001 purchase. The seller's facilitator pays the fee of the payment itself.
+- **One agent key serves everyone.** Purchases by different people pass through the same token account for a few seconds each. Accounting is per transaction, and every pull and refund carries a unique note.
+- **Sign-in sessions last 12 hours.** Signing out clears the cookie in the browser; the server keeps no session list to revoke.
+- **No professional audit.** Our code has had automated tests, a local rehearsal with a deliberately misbehaving seller, and one AI-assisted adversarial review whose findings were fixed. That is not a professional audit.
 - **Small amounts only.** The defaults and the interface are built for cents and single dollars.
 
 ## Run it yourself
@@ -262,7 +270,7 @@ pnpm quotes      # asks every catalog seller for its price on mainnet; unpaid, n
 Local chain checks. Terminal 1 starts a validator that loads the mainnet build of the Allowances program:
 
 ```bash
-solana-test-validator --reset \
+solana-test-validator --reset --limit-ledger-size 50000000 \
   --clone-upgradeable-program De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44 \
   --url https://api.mainnet-beta.solana.com
 ```

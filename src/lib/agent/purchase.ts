@@ -152,7 +152,7 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   try {
     pulled = await pull(live, amount, async (signature, lastValidBlockHeight) => {
       await updatePurchase(purchaseId, { status: "pulling", pull_sig: signature, pull_last_valid_height: lastValidBlockHeight, pay_memo: payment.memo, pay_blockhash: payment.blockhash, pay_last_valid_height: payLastValidHeight });
-    });
+    }, purchaseId);
   } catch (e) {
     if (e instanceof ChainRefused) {
       await updatePurchase(purchaseId, { status: "failed", error: `Refused by Solana: ${e.plain}` });
@@ -260,7 +260,7 @@ async function refundPurchase(p: Pick<PurchaseRow, "id" | "owner" | "amount_base
   try {
     const back = await refund(new PublicKey(p.owner), BigInt(p.amount_base), async (signature, lastValidBlockHeight) => {
       await updatePurchase(p.id, { refund_try_sig: signature, refund_try_height: lastValidBlockHeight });
-    });
+    }, p.id);
     await moveStatus(p.id, "refunding", "refunded", { refund_sig: back.signature, unresolved_until: null });
     return back.signature;
   } catch (e) {
