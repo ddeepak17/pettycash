@@ -1,8 +1,16 @@
 "use client";
+import { useState } from "react";
 import { explorerTx, formatUsd } from "@/lib/solana/cluster";
 import type { Cluster } from "@/lib/types";
 import type { Purchase, RunState } from "@/lib/client/run";
 import { Countdown, Markdown, Spinner } from "./ui";
+
+function PurchaseImage({ id, alt }: { id: string; alt: string }) {
+  const [ok, setOk] = useState(true);
+  if (!ok) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={"/api/artifact/" + id} alt={alt} loading="lazy" onError={() => setOk(false)} className="mt-2 max-w-[320px] w-full rounded border border-rule" />;
+}
 
 function Line({ label, children, tone }: { label: string; children: React.ReactNode; tone?: "bad" | "good" }) {
   return (
@@ -10,6 +18,23 @@ function Line({ label, children, tone }: { label: string; children: React.ReactN
       <span className="eyebrow w-16 shrink-0 pt-0.5 sm:w-24">{label}</span>
       <div className={`min-w-0 flex-1 break-words ${tone === "bad" ? "text-bad" : ""}`}>{children}</div>
     </div>
+  );
+}
+
+function ThinkingLine({ p, cluster }: { p: Purchase; cluster: Cluster }) {
+  const state = p.delivered ? "paid and delivered" : p.paid ? "paid" : p.pulled ? "paying" : "starting";
+  return (
+    <details className="slidein text-sm" data-testid="reasoning">
+      <summary className="mono text-xs">
+        <span>Thinking, paid to {p.seller.name}: <strong>{formatUsd(p.amountBase)}</strong></span>
+        {!p.delivered ? <span className="pulse text-muted"> · {state}</span> : null}
+      </summary>
+      <div className="ml-4 mt-1 border-l-2 border-rule pl-3 text-xs text-muted">
+        <div>State: {state}.</div>
+        {p.pulled ? <div><a className="underline" target="_blank" rel="noopener noreferrer" href={explorerTx(p.pulled.signature, cluster)}>Money moved from wallet ↗</a></div> : null}
+        {p.paid?.signature ? <div><a className="underline" target="_blank" rel="noopener noreferrer" href={explorerTx(p.paid.signature, cluster)}>Seller paid ↗</a></div> : null}
+      </div>
+    </details>
   );
 }
 
@@ -79,6 +104,7 @@ function PurchaseBlock({ p, cluster, onApprove, live }: { p: Purchase; cluster: 
         {p.delivered ? (
           <Line label="Came back">
             {(p.delivered.bytes / 1024).toFixed(p.delivered.bytes < 10240 ? 1 : 0)} KB
+            {p.seller.id === "make_image" ? <PurchaseImage id={p.id} alt={p.description} /> : null}
             <details className="mt-1"><summary className="text-muted">Preview</summary><p className="mono mt-1 whitespace-pre-wrap break-words rounded bg-paper p-2 text-xs">{p.delivered.preview}</p></details>
           </Line>
         ) : null}
@@ -112,7 +138,11 @@ export function RunTape({ run, cluster, onApprove, onCancel }: { run: RunState; 
       </div>
       <div className="mt-4 space-y-3">
         {run.items.map((it, i) => {
-          if (it.kind === "thinking") return <p key={i} className="slidein mono text-sm text-muted">› {it.text}</p>;
+          if (it.kind === "thinking") return <p key={i} className="slidein mono -mt-1 ml-1 text-sm text-muted">→ {it.text}</p>;
+          if (it.kind === "purchase") {
+            const p = run.purchases[it.id];
+            if (p.kind === "reasoning" && !p.refused && !p.failed && !p.approval) return <ThinkingLine key={i} p={p} cluster={cluster} />;
+          }
           if (it.kind === "purchase") return <PurchaseBlock key={i} p={run.purchases[it.id]} cluster={cluster} onApprove={onApprove} live={live} />;
           if (it.kind === "error") return <p key={i} role="alert" className="rounded border border-bad bg-[var(--bad-bg)] p-3 text-sm text-bad">{it.message}</p>;
           return (
