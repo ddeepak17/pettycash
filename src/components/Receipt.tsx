@@ -1,5 +1,6 @@
 "use client";
 import type React from "react";
+import { useState } from "react";
 import { explorerTx, formatUsd, shortAddress } from "@/lib/solana/cluster";
 import type { Cluster, Receipt } from "@/lib/types";
 import { useNow } from "@/lib/client/hooks";
@@ -73,9 +74,19 @@ export function ReceiptCard({ r, cluster, showWallet }: { r: Receipt; cluster: C
   );
 }
 
-export function ReceiptList({ receipts, error, cluster, empty, showWallet }: { receipts: Receipt[] | null; error: string | null; cluster: Cluster; empty: string; showWallet?: boolean }) {
+export function ReceiptList({ receipts, error, cluster, empty, showWallet, runId, limit = 6 }: { receipts: Receipt[] | null; error: string | null; cluster: Cluster; empty: string; showWallet?: boolean; runId?: string | null; limit?: number }) {
+  const [all, setAll] = useState(false);
   if (error && !receipts) return <p role="alert" className="text-sm text-bad">{error}</p>;
   if (!receipts) return <div className="space-y-3" aria-busy="true"><Spinner label="Loading receipts" /><div className="skeleton h-24" /></div>;
   if (receipts.length === 0) return <p className="rounded border border-dashed border-rule p-5 text-sm text-muted">{empty}</p>;
-  return <ul className="space-y-5">{receipts.map((r) => <ReceiptCard key={r.id} r={r} cluster={cluster} showWallet={showWallet} />)}</ul>;
+  // The run in progress comes first; the rest keep their order (newest first).
+  const ordered = runId ? [...receipts.filter((r) => r.runId === runId), ...receipts.filter((r) => r.runId !== runId)] : receipts;
+  const shown = all ? ordered : ordered.slice(0, Math.max(limit, runId ? receipts.filter((r) => r.runId === runId).length : 0));
+  return (
+    <>
+      <ul className="space-y-5">{shown.map((r) => <ReceiptCard key={r.id} r={r} cluster={cluster} showWallet={showWallet} />)}</ul>
+      {shown.length < ordered.length ? <button type="button" className="btn btn-small mt-4" onClick={() => setAll(true)}>Show all {ordered.length}</button> : null}
+      {all && ordered.length > limit ? <button type="button" className="btn btn-small mt-4" onClick={() => setAll(false)}>Show fewer</button> : null}
+    </>
+  );
 }

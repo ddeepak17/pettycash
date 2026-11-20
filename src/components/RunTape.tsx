@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { explorerTx, formatUsd } from "@/lib/solana/cluster";
 import type { Cluster } from "@/lib/types";
 import type { Purchase, RunState } from "@/lib/client/run";
+import type React from "react";
 import { Countdown, Markdown, Spinner } from "./ui";
 
 function PurchaseImage({ id, alt }: { id: string; alt: string }) {
@@ -10,6 +11,16 @@ function PurchaseImage({ id, alt }: { id: string; alt: string }) {
   if (!ok) return null;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={"/api/artifact/" + id} alt={alt} loading="lazy" onError={() => setOk(false)} className="mt-2 max-w-[320px] w-full rounded border border-rule" />;
+}
+
+function Clamp({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="text-sm text-muted">
+      <div className={open ? "" : "line-clamp-2"}>{text}</div>
+      {text.length > 110 ? <button type="button" className="text-xs underline" onClick={() => setOpen(!open)}>{open ? "Show less" : "Show more"}</button> : null}
+    </div>
+  );
 }
 
 function Line({ label, children, tone }: { label: string; children: React.ReactNode; tone?: "bad" | "good" }) {
@@ -46,7 +57,7 @@ function PurchaseBlock({ p, cluster, onApprove, live }: { p: Purchase; cluster: 
         <div className="min-w-0">
           <div className="eyebrow">{p.kind === "reasoning" ? "Agent thinking, bought" : "Quote"}</div>
           <div className="break-words font-semibold">{p.seller.name}</div>
-          <div className="text-sm text-muted">{p.description}</div>
+          <Clamp text={p.description} />
         </div>
         <div className="mono shrink-0 text-lg font-semibold">{formatUsd(p.amountBase)}</div>
       </div>
@@ -120,8 +131,15 @@ function PurchaseBlock({ p, cluster, onApprove, live }: { p: Purchase; cluster: 
   );
 }
 
-export function RunTape({ run, cluster, onApprove, onCancel }: { run: RunState; cluster: Cluster; onApprove?: (id: string, d: "approved" | "denied") => void; onCancel?: () => void }) {
+export function RunTape({ run, cluster, onApprove, onCancel, next }: { run: RunState; cluster: Cluster; onApprove?: (id: string, d: "approved" | "denied") => void; onCancel?: () => void; next?: React.ReactNode }) {
   const live = run.phase === "running";
+  const answerRef = useRef<HTMLDivElement>(null);
+  const hasAnswer = run.items.some((i) => i.kind === "answer");
+  useEffect(() => {
+    if (!hasAnswer || !answerRef.current) return;
+    const r = answerRef.current.getBoundingClientRect();
+    if (r.top > window.innerHeight * 0.6 || r.top < 0) answerRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [hasAnswer]);
   return (
     <section aria-label="The errand" className="sheet p-4 sm:p-6" data-testid="run-tape">
       <p className="sr-only" role="status" aria-live="polite">
@@ -149,8 +167,8 @@ export function RunTape({ run, cluster, onApprove, onCancel }: { run: RunState; 
           if (it.kind === "purchase") return <PurchaseBlock key={i} p={run.purchases[it.id]} cluster={cluster} onApprove={onApprove} live={live} />;
           if (it.kind === "error") return <p key={i} role="alert" className="rounded border border-bad bg-[var(--bad-bg)] p-3 text-sm text-bad">{it.message}</p>;
           return (
-            <div key={i} className="slidein perf pt-4" data-testid="answer">
-              <div className="eyebrow mb-2">Answer</div>
+            <div key={i} ref={answerRef} className="slidein rounded border-2 border-ink bg-paper p-4 text-base sm:p-5 sm:text-lg" data-testid="answer">
+              <div className="eyebrow mb-2 text-accent">Answer</div>
               <Markdown text={it.text} />
             </div>
           );
@@ -160,6 +178,7 @@ export function RunTape({ run, cluster, onApprove, onCancel }: { run: RunState; 
         {(run.phase === "done" || run.phase === "failed") && run.finish ? (
           <p className="mono text-xs text-muted" data-testid="run-end">{run.phase === "done" ? "Done" : "Ended early"} in {(run.finish.ms / 1000).toFixed(1)}s · {run.finish.purchases} {run.finish.purchases === 1 ? "purchase" : "purchases"} · {formatUsd(run.finish.spentBase)} spent</p>
         ) : null}
+        {run.phase === "done" && next ? <div className="flex flex-wrap items-center gap-3 border-t border-dashed border-rule pt-3">{next}</div> : null}
       </div>
     </section>
   );

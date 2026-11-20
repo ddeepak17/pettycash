@@ -67,6 +67,19 @@ export default function App() {
     setMode("wallet");
     void run.start(task, { house: false, delegation: selected.address });
   };
+  const tapeRef = useRef<HTMLDivElement>(null);
+  // When a visitor's errand starts, bring the tape up from below the fold, once.
+  useEffect(() => {
+    if (!run.state.runId || !tapeRef.current) return;
+    const top = tapeRef.current.getBoundingClientRect().top;
+    if (top > window.innerHeight * 0.55) window.scrollBy({ top: top - 72, behavior: "smooth" });
+  }, [run.state.runId]);
+  const next = run.state.runId ? (
+    <>
+      <a className="btn btn-primary btn-small" href={`/r/${run.state.runId}`}>Open the shareable page for this errand</a>
+      <button type="button" className="btn btn-small" onClick={() => document.querySelector<HTMLButtonElement>("header button.btn")?.click()}>Use your own wallet</button>
+    </>
+  ) : null;
   const busy = run.state.phase === "running";
   const cluster = config?.cluster ?? "mainnet-beta";
   const real = cluster === "mainnet-beta";
@@ -113,9 +126,9 @@ export default function App() {
             </section>
             {run.error ? <div className="mt-6"><ErrorNote>{run.error}</ErrorNote></div> : null}
             {run.state.phase !== "idle" ? (
-              <div className="mt-8 grid gap-8 lg:grid-cols-[1.1fr_1fr]">
-                <RunTape run={run.state} cluster={cluster} onApprove={run.approve} onCancel={run.cancel} />
-                <div><h2 className="eyebrow mb-3">Receipts</h2><ReceiptList receipts={mode === "house" ? feed.receipts : null} error={feed.error} cluster={cluster} empty="No receipts yet." showWallet /></div>
+              <div ref={tapeRef} className="mt-8 grid items-start gap-8 lg:grid-cols-[1.1fr_1fr]">
+                <RunTape run={run.state} cluster={cluster} onApprove={run.approve} onCancel={run.cancel} next={mode === "house" ? next : undefined} />
+                <div><h2 className="eyebrow mb-3">Receipts</h2><ReceiptList receipts={mode === "house" ? feed.receipts : null} error={feed.error} cluster={cluster} empty="No receipts yet." showWallet runId={run.state.runId} /></div>
               </div>
             ) : null}
             <Steps />
@@ -143,7 +156,7 @@ export default function App() {
               {run.state.phase !== "idle" ? <RunTape run={run.state} cluster={cluster} onApprove={run.approve} onCancel={run.cancel} /> : null}
               <section aria-labelledby="rc">
                 <h2 id="rc" className="text-xl font-semibold">Receipts</h2>
-                <div className="mt-4"><ReceiptList receipts={owned.receipts} error={owned.error} cluster={cluster} empty="No receipts yet. Run an errand and each purchase shows up here." /></div>
+                <div className="mt-4"><ReceiptList receipts={owned.receipts} error={owned.error} cluster={cluster} empty="No receipts yet. Run an errand and each purchase shows up here." runId={run.state.runId} /></div>
               </section>
             </div>
           </div>
