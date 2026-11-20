@@ -24,7 +24,7 @@ describe("shrinking tool results", () => {
     expect(out).toContain("[binary data omitted]");
     expect(out.length).toBeLessThan(1000);
   });
-  it("caps the total size", () => expect(shrinkResult("word ".repeat(5000)).length).toBeLessThanOrEqual(3520));
+  it("caps the total size", () => expect(shrinkResult("word ".repeat(5000)).length).toBeLessThanOrEqual(2620));
 });
 
 describe("tool input from the model", () => {

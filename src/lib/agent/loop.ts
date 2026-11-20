@@ -94,11 +94,11 @@ export function parseAction(text: string): Action | null {
 }
 
 /** Shrinks a tool result so the next reasoning step stays cheap. Images are replaced by a note. */
-export function shrinkResult(text: string, limit = 3500): string {
+export function shrinkResult(text: string, limit = 2600): string {
   let out = text;
   try {
     const parsed = JSON.parse(text);
-    out = JSON.stringify(parsed, (_k, v) => (typeof v === "string" && v.length > 600 ? (/^[A-Za-z0-9+/=\s]{600,}$/.test(v) ? "[binary data omitted]" : `${v.slice(0, 600)}…`) : v));
+    out = JSON.stringify(parsed, (_k, v) => (typeof v === "string" && v.length > 420 ? (/^[A-Za-z0-9+/=\s]{420,}$/.test(v) ? "[binary data omitted]" : `${v.slice(0, 420)}…`) : v));
   } catch { /* not JSON: keep text */ }
   return out.length > limit ? `${out.slice(0, limit)}… [trimmed]` : out;
 }
@@ -122,6 +122,10 @@ export async function runAgent(o: RunOptions): Promise<RunResult> {
     { role: "user", content: `Task from the person: ${o.task}` },
   ];
   let spent = 0n, purchases = 0, parseFailures = 0;
+  // Each step of thinking costs more than the one before, because it re-reads everything gathered so far.
+  // The agent is told to answer while it can still afford to: an errand that spends its budget and returns
+  // nothing is the worst outcome.
+  let lastThinkCost = 0n, toldToWrapUp = false;
   const bought = new Set<string>();
   const ctx = (step: number): PurchaseContext => ({ runId: o.runId, owner: o.owner, allowance: o.allowance, step, canAsk: o.canAsk, limits: o.limits, spentInRun: spent, emit: o.emit, signal: o.signal });
   const finish = async (status: RunResult["status"], answer: string | null): Promise<RunResult> => {
@@ -133,7 +137,11 @@ export async function runAgent(o: RunOptions): Promise<RunResult> {
     if (o.signal?.aborted) return finish("stopped", null);
     if (o.deadlineAt && Date.now() > o.deadlineAt) return finish("failed", "I ran out of time before I could finish. Nothing more was spent.");
     const last = step === o.limits.maxSteps;
-    if (last) messages.push({ role: "user", content: "This is your last step. Reply with the answer action now, using what you have." });
+    const nearlyOut = lastThinkCost > 0n && spent + lastThinkCost * 4n > o.limits.runBudget;
+    if ((last || nearlyOut) && !toldToWrapUp) {
+      toldToWrapUp = true;
+      messages.push({ role: "user", content: last ? "This is your last step. Reply with the answer action now, using what you have." : "The budget for this errand is almost used up. Reply with the answer action now, using what you have. Say briefly if something is missing." });
+    }
 
     // 1. Buy one step of reasoning.
     const thought = await purchase(ctx(step), {
@@ -148,6 +156,7 @@ export async function runAgent(o: RunOptions): Promise<RunResult> {
       return finish("failed", purchases > 0 || spent > 0n ? `I had to stop early. ${why}` : `I could not start. ${why}`);
     }
     spent += thought.amount;
+    lastThinkCost = thought.amount;
     if (thought.amount > 0n) purchases++;
     const content = readCompletion(thought.text);
     const action = content ? parseAction(content) : null;
@@ -159,6 +168,8 @@ export async function runAgent(o: RunOptions): Promise<RunResult> {
     messages.push({ role: "assistant", content: JSON.stringify(action) });
     if (action.say) await o.emit({ type: "thinking", step, text: action.say });
     if (action.action === "answer") return finish("done", action.answer);
+
+    if (toldToWrapUp) { messages.push({ role: "user", content: "There is no budget left for another purchase. Reply with the answer action now." }); continue; }
 
     // 2. The agent asked to buy something. Only catalog tools exist; everything else is refused here.
     const seller = sellers.find((x) => x.id === action.tool) ?? null;
