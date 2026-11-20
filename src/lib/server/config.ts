@@ -49,6 +49,8 @@ export const limits = () => ({
   runBudgetBase: big("RUN_BUDGET_BASE", 250_000n),
   /** Most a single run on the public demo petty cash may spend. Default $0.03. */
   houseRunBudgetBase: big("HOUSE_RUN_BUDGET_BASE", 30_000n),
+  /** Below this the public demo counts as spent: an errand could start but not finish. Default $0.01. */
+  houseMinRunBase: big("HOUSE_MIN_RUN_BASE", 10_000n),
   maxSteps: Number(env("MAX_STEPS") ?? 6),
   approvalWaitMs: Number(env("APPROVAL_WAIT_MS") ?? 60_000),
   // Per address these are deliberately loose: at a conference many visitors share one network address. They slow a
@@ -57,6 +59,9 @@ export const limits = () => ({
   houseRunsPerDayPerIp: Number(env("HOUSE_RUNS_PER_DAY_PER_IP") ?? 40),
   houseRunsPerHour: Number(env("HOUSE_RUNS_PER_HOUR") ?? 60),
 });
+
+/** Finished public errands shown on the landing page. We choose them: comma-separated run ids in SHOWCASE_RUNS. */
+export const showcaseRunIds = (): string[] => (env("SHOWCASE_RUNS") ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 4);
 
 /** The public demo petty cash: an allowance from a wallet we funded, so anyone can try without a wallet. */
 export const house = (): { owner: PublicKey; delegation: PublicKey } | null => {

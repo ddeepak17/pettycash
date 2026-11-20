@@ -22,7 +22,8 @@ export const mockConfig = (): PublicConfig => ({
   agent: AGENT,
   allowancesProgram: "De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44",
   limits: { perPurchaseMaxBase: "250000", approvalThresholdBase: "10000", maxSteps: 8 },
-  house: { owner: HOUSE_OWNER, delegation: "HouseMockAllowance1111111111111111111111111aaaa", remainingBase: "2350000", perRunBudgetBase: "100000", expiryTs: Math.floor(Date.now() / 1000) + 86400 * 2 },
+  house: { owner: HOUSE_OWNER, delegation: "HouseMockAllowance1111111111111111111111111aaaa", remainingBase: "2350000", perRunBudgetBase: "100000", expiryTs: Math.floor(Date.now() / 1000) + 86400 * 2, canRun: true },
+  showcase: [],
   streamActive: true,
   catalog: [
     { id: "search", name: "Northwind Search", host: "search.northwind.example", kind: "search", description: "Web search results", lastPriceBase: "5000", record: { purchases: 42, delivered: 42 } },

@@ -95,6 +95,19 @@ export const openPurchases = async (owner?: string) =>
     : sql()`select *, extract(epoch from (now() - updated_at))::float as age_s from pettycash.purchases where pull_sig is not null and refund_sig is null and settled_at is null
         and status in ('pulling', 'pulled', 'paying', 'delivered', 'paid', 'refund_pending', 'refunding') and cluster = ${cluster()} order by updated_at asc limit 25`)) as unknown as PurchaseRow[];
 
+/** Finished errands for the landing page, in the order asked for. Only errands that ran on the public demo and
+ *  finished are ever returned, so a private errand cannot be shown by listing its id. */
+export async function showcaseRuns(ids: string[]): Promise<{ id: string; task: string; spentBase: string; purchases: number }[]> {
+  const valid = ids.filter((i) => /^[0-9a-f-]{36}$/.test(i));
+  if (!valid.length) return [];
+  const s = sql();
+  const rows = await s`select r.id::text as id, r.task, r.spent_base,
+      (select count(*) from pettycash.purchases p where p.run_id = r.id and p.pull_sig is not null and p.refund_sig is null)::int as purchases
+    from pettycash.runs r where r.id::text in ${s(valid)} and r.is_house and r.status = 'done' and r.cluster = ${cluster()}`;
+  const byId = new Map(rows.map((r) => [r.id as string, r]));
+  return valid.flatMap((i) => { const r = byId.get(i); return r ? [{ id: i, task: r.task as string, spentBase: String(r.spent_base), purchases: Number(r.purchases) }] : []; });
+}
+
 /** Marks a row as looked at, so the next pass starts with rows that have waited longer. */
 export async function touchPurchase(id: string) {
   await sql()`update pettycash.purchases set attempts = attempts + 1, updated_at = now() where id = ${id}`;

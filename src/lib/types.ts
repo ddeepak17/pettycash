@@ -21,11 +21,22 @@ export type PublicConfig = {
     maxSteps: number;
   };
   /** The public demo petty cash that anyone can try without a wallet. Null when it is switched off. */
-  house: null | { owner: string; delegation: string; remainingBase: string; perRunBudgetBase: string; expiryTs: number };
+  house: null | {
+    owner: string; delegation: string; remainingBase: string; perRunBudgetBase: string; expiryTs: number;
+    /** False when too little is left for an errand to finish. The page then offers finished errands instead. */
+    canRun: boolean;
+    /** A daily demo budget: the amount per period, and when the next period starts (unix seconds). */
+    perPeriodBase?: string;
+    refillsAt?: number;
+  };
+  /** Finished errands from the public demo, chosen by us, that anyone can open. */
+  showcase: ShowcaseErrand[];
   /** True while the QuickNode Stream is delivering. */
   streamActive: boolean;
   catalog: CatalogEntry[];
 };
+
+export type ShowcaseErrand = { id: string; task: string; spentBase: string; purchases: number };
 
 /** A paid service the agent is allowed to buy from. */
 export type CatalogEntry = {

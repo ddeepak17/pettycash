@@ -11,7 +11,7 @@ import { Catalog } from "./Catalog";
 import { CashBox, ProofView } from "./CashBox";
 import { Modal } from "./Modal";
 import type { ProofResult } from "@/lib/types";
-import { CheckItYourself, Enforcement, Feed, Steps } from "./Landing";
+import { CheckItYourself, Enforcement, Feed, Showcase, Steps } from "./Landing";
 import { ReceiptList } from "./Receipt";
 import { RunTape } from "./RunTape";
 import { TaskBox } from "./TaskBox";
@@ -81,6 +81,8 @@ export default function App() {
     </>
   ) : null;
   const busy = run.state.phase === "running";
+  const refillAt = config?.house?.refillsAt ? new Date(config.house.refillsAt * 1000) : null;
+  const refill = refillAt ? `${refillAt.toLocaleDateString([], { weekday: "long" })} at ${refillAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : null;
   const cluster = config?.cluster ?? "mainnet-beta";
   const real = cluster === "mainnet-beta";
 
@@ -104,7 +106,7 @@ export default function App() {
                 <p className="mt-3 max-w-xl text-sm text-muted">The agent holds only the price of one purchase, for a few seconds. Every receipt is checked independently.</p>
               </div>
               <div className="sheet h-fit p-5 sm:p-6">
-                {config.house ? (
+                {config.house && (config.house.canRun || busy) ? (
                   <>
                     <h2 className="text-xl font-semibold">Try it now, on us</h2>
                     <p className="mt-1 mb-4 text-sm text-muted">No wallet needed. This spends the house petty cash{real ? ", which is real money" : ", which is test money"}: up to {formatUsd(config.house.perRunBudgetBase)} per errand.</p>
@@ -114,9 +116,27 @@ export default function App() {
                       <button type="button" className="underline" onClick={testHouse} disabled={houseProof?.busy}>Try to overspend the house petty cash</button>{" "}
                       and watch Solana refuse.
                     </p>
+                    <Showcase config={config} lead="Short on time? Open an errand that already ran:" />
+                  </>
+                ) : config.house ? (
+                  <>
+                    <h2 className="text-xl font-semibold">Today&apos;s demo budget is spent</h2>
+                    <p className="mt-2 text-sm leading-relaxed text-muted">
+                      Visitors have used up the public budget{config.house.perPeriodBase ? ` of ${formatUsd(config.house.perPeriodBase)} a day` : ""}. It is real money, so the limit is real: Solana refuses anything more.
+                      {refill ? ` It refills on ${refill}.` : ""}
+                    </p>
+                    <Showcase config={config} lead="Open a real errand that already ran. Every step links to its transaction:" prominent />
+                    <p className="mt-4 text-sm">
+                      <button type="button" className="underline" onClick={testHouse} disabled={houseProof?.busy}>Try to overspend the house petty cash</button>{" "}
+                      and watch Solana refuse.
+                    </p>
                   </>
                 ) : (
-                  <div><h2 className="text-xl font-semibold">The house petty cash is switched off</h2><p className="mt-2 text-sm text-muted">The public demo budget is being topped up. You can still connect your own wallet.</p></div>
+                  <>
+                    <h2 className="text-xl font-semibold">The public demo could not be loaded</h2>
+                    <p className="mt-2 text-sm text-muted">Reload the page in a moment. You can still connect your own wallet.</p>
+                    <Showcase config={config} lead="Or open a real errand that already ran:" prominent />
+                  </>
                 )}
                 <div className="perf mt-5 flex flex-wrap items-center gap-3 pt-4">
                   <button className="btn btn-small" onClick={() => document.querySelector<HTMLButtonElement>("header button.btn")?.click()}>Use your own wallet</button>

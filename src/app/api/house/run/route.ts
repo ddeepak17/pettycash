@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
   let live;
   try { live = await readAllowance(h.delegation); } catch { return fail("Solana could not be reached just now. Try again in a moment.", 503); }
-  if (!live || live.expired || live.remaining < 2000n) return fail("The public demo petty cash is used up for now. Connect your own wallet to try it.", 503);
+  if (!live || live.expired || live.remaining < l.houseMinRunBase) return fail("Today's public demo budget is spent. Open one of the finished errands on this page, or connect your own wallet.", 503);
   const runBudget = live.remaining < l.houseRunBudgetBase ? live.remaining : l.houseRunBudgetBase;
   return startRun({ owner: h.owner, allowance: h.delegation, task, isHouse: true, runBudget, approvalThreshold: l.approvalThresholdBase, onStart: wakeStream }, req.signal);
 }

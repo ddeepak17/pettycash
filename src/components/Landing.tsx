@@ -25,6 +25,38 @@ export function Steps() {
   );
 }
 
+const showcaseLabel = (task: string) => (/\/trap\b/.test(task) ? "The trap page: a page that tries to hijack the agent" : task.length > 70 ? `${task.slice(0, 67)}…` : task);
+const showcaseShort = (task: string) => (/\/trap\b/.test(task) ? "the trap page" : /weather/i.test(task) ? "the weather" : /taco/i.test(task) ? "tacos near campus" : task.length > 28 ? `${task.slice(0, 26)}…` : task);
+
+/** Finished errands anyone can open: the whole run, every step linked to its transaction. */
+export function Showcase({ config, lead, prominent }: { config: PublicConfig; lead: string; prominent?: boolean }) {
+  const items = config.showcase ?? [];
+  if (!items.length) return null;
+  if (!prominent) {
+    return (
+      <p className="mt-3 text-xs leading-relaxed text-muted">
+        {lead}{" "}
+        {items.map((s, i) => (
+          <span key={s.id}>{i ? " · " : ""}<a className="underline underline-offset-2" href={`/r/${s.id}`}>{showcaseShort(s.task)}</a> <span className="mono">({formatUsd(s.spentBase)})</span></span>
+        ))}
+      </p>
+    );
+  }
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-semibold">{lead}</p>
+      <ul className="mt-2 space-y-2.5 text-sm">
+        {items.map((s) => (
+          <li key={s.id}>
+            <a className="block underline underline-offset-2" href={`/r/${s.id}`}>{showcaseLabel(s.task)}</a>
+            <span className="mono block text-xs text-muted">{formatUsd(s.spentBase)} · {s.purchases} {s.purchases === 1 ? "purchase" : "purchases"}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function Enforcement({ config }: { config: PublicConfig | null }) {
   const ceiling = config ? formatUsd(config.limits.perPurchaseMaxBase) : "a set amount";
   const ask = config ? formatUsd(config.limits.approvalThresholdBase) : "a set amount";
