@@ -79,56 +79,64 @@ stateDiagram-v2
     [*] --> awaiting_approval: rule check says ask
     [*] --> denied: rule check denies
     awaiting_approval --> denied: owner says no, nobody answers, or nobody can be asked
-    awaiting_approval --> pulled: owner approves and the pull succeeds
-    quoted --> pulled: pull succeeds
-    quoted --> failed: pull refused or not confirmed
-    awaiting_approval --> failed: pull refused or not confirmed
-    pulled --> refund_pending: payment signed and checked, memo recorded, about to be sent
-    refund_pending --> delivered: seller answers with success
-    refund_pending --> paid: seller reports settlement but does not deliver
-    refund_pending --> paid: reconciler finds the payment onchain by its memo
-    refund_pending --> refunding: payment never sent, or it can no longer land
-    pulled --> refunding: stale for 6 minutes, no payment was ever built
+    awaiting_approval --> quoted: owner approves
+    quoted --> failed: payment cannot be built, or the pull is refused (nothing moved)
+    quoted --> pulling: pull signed, its signature recorded, then broadcast
+    pulling --> paying: pull confirmed, the payment is about to be sent
+    pulling --> failed: reconciler finds the pull failed or expired (nothing moved)
+    pulling --> refund_pending: reconciler finds the pull landed but no payment was sent
+    paying --> delivered: seller answers with success
+    paying --> paid: reconciler finds the payment onchain, seller did not deliver
+    paying --> refund_pending: no payment onchain and it can no longer land
+    delivered --> refund_pending: no payment onchain and it can no longer land
+    refund_pending --> refunding: one reconciler claims the refund
     refunding --> refunded: refund confirmed
-    refunding --> refund_pending: refund failed, or the claim went stale
+    refunding --> refund_pending: refund failed or expired, try again
     denied --> [*]
     failed --> [*]
-    delivered --> [*]
-    paid --> [*]
+    delivered --> [*]: settled_at set once the payment is confirmed onchain
+    paid --> [*]: settled_at set
     refunded --> [*]
 ```
 
 Money moves in exactly two places on the way out, and one on the way back:
 
-- **Pull**, owner to agent. The agent's key signs the Allowances program's transfer instruction for exactly the quoted amount. The transaction is simulated first. If the program refuses, the purchase is `failed` and the event `chain_refused` carries the program's error number.
-- **Payment**, agent to seller. The x402 SDK builds a transaction. `assertPaymentIsExactlyTheQuote` decodes it and refuses anything other than the one quoted `TransferChecked`. The seller's facilitator pays the fee and submits it.
-- **Refund**, agent to owner. A `TransferChecked` from the agent's token account back to the owner's.
+- **Pull**, owner to agent. The agent's key signs the Allowances program's transfer instruction for exactly the quoted amount, plus a unique note. The transaction is simulated first. If the program refuses, the purchase ends as `failed` and nothing moved.
+- **Payment**, agent to seller. The x402 SDK builds a transaction. `assertPaymentIsExactlyTheQuote` decodes it and refuses anything other than the one quoted `TransferChecked`. This happens **before** the pull, so a payment that cannot be built never causes money to move. The seller's facilitator pays the fee and submits it.
+- **Refund**, agent to owner. A `TransferChecked` from the agent's token account back to the owner's, plus a unique note.
+
+Every pull and refund carries a unique note (`pettycash:pull:<purchase id>`), because two transactions with identical instructions and the same recent blockhash share one signature and the chain runs them once.
 
 ### Unresolved payments
 
-This section describes the code at commit `2f53480`.
+Nothing here trusts a seller's word about money. `settleUnresolved` in `src/lib/agent/purchase.ts` settles every purchase whose money is not yet accounted for (`pull_sig` set, `settled_at` and `refund_sig` empty). It runs after every errand, again about 90 seconds later, and from the housekeeping endpoint.
 
-After a signed payment is put on the wire, its outcome is the seller's to report. Three things can happen.
+What is written down, and when:
 
-1. **The seller answers with success.** The purchase is `delivered`. The response's size and SHA-256 hash are stored.
-2. **The seller reports that it settled the payment, then fails.** The purchase is `paid`. Nothing is refunded, because the seller has the money and x402 has no refund from a seller. The amount counts as spent.
-3. **The outcome is unknown.** The seller answered with an error and no settlement report, or the connection dropped. A signed payment can still land until its blockhash expires. The purchase stays `refund_pending` and nothing is guessed.
+| Before this is broadcast | This is already in the database |
+|---|---|
+| The pull | its signature, its last valid block height, the payment's memo and blockhash, and `pay_last_valid_height`: the current block height plus 300 at the moment the payment was built |
+| A refund | its signature and its last valid block height |
 
-Just before sending, the engine stores the payment's random memo and a time before which the purchase must be left alone: 150 seconds, plus the seller's response timeout while the request is still open. The reconciler, `settleUnresolved`, runs after every errand for that wallet, and for all wallets from the housekeeping endpoint, which a scheduled workflow (`.github/workflows/tick.yml`) calls every 10 minutes. For each unresolved purchase whose time has passed it:
+So a purchase interrupted at any point (the server stopped, an RPC call timed out) can be settled later from chain state alone.
 
-- looks for the memo among the last 500 transactions of the agent's token account;
-- if the payment is there, records the purchase as `paid` with that signature and does not refund;
-- if the chain cannot be read, does nothing and tries again later;
-- otherwise claims the refund and returns the money to the owner.
+How each open state is decided:
 
-Two rules keep this safe:
+| State | Evidence looked at | Result |
+|---|---|---|
+| `pulling` | The pull's signature status, with history search | Landed: no payment was sent, so the money is returned. Failed, or a finalized block is past its last valid height: nothing moved |
+| `paying`, `delivered`, `paid` | The agent token account's transactions since the pull, read back until the pull itself appears. A candidate must carry the payment's memo exactly, must not belong to another purchase, and must show the agent's balance falling by the amount and the pinned recipient's rising by it | Found: `settled_at` is set (and `paying` becomes `paid`). Not found and a finalized block is past `pay_last_valid_height`: the money is returned. Otherwise wait |
+| `refund_pending` | none needed | One reconciler claims it and sends the refund |
+| `refunding` | The recorded refund signature's status | Landed: `refunded`. Failed or expired: back to `refund_pending`. Unknown: wait. A refund is never blindly sent a second time |
 
-- **Never refund on a guess.** A payment that was signed is refunded only after its memo was looked for and not found. A signed payment with no recorded memo is never refunded automatically and stays `refund_pending` for a person to resolve.
-- **Exactly once.** A refund is claimed with a single conditional update to `refunding`. Only one caller wins. A claim left behind by a process that stopped is released after 3 minutes and retried.
+The rules that keep this safe:
 
-If the payment was never sent at all (it could not be built, or it failed the pre-send check), nobody else holds a signed transfer, so the money is returned immediately.
+- **Never refund on a guess.** If the history read does not reach the pull (a node has pruned it), the answer is "unknown" and nothing is refunded.
+- **Expiry is a block height, not a question about a blockhash.** At finalized commitment a brand-new blockhash is reported invalid exactly like an expired one. We therefore compare the finalized block height with a height recorded when the payment was built.
+- **Exactly once.** Every state change is a compare-and-set on the current status (`moveStatus`), a refund needs an exclusive claim (`claimRefund`), and unique indexes stop one signature being recorded for two purchases.
+- **A seller that takes the payment and fails keeps it.** That is recorded as `paid`, not delivered. x402 has no refund from a seller.
 
-The rehearsal covers each branch: checks B, C, C2 and C3 in [EVIDENCE.md](EVIDENCE.md).
+The rehearsal covers each branch with a seller that misbehaves on purpose: checks B, C, C2, L, M, R1 and R2 in `scripts/rehearse-local.ts`.
 
 ### How a receipt becomes verified
 
