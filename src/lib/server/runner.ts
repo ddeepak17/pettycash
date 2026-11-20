@@ -22,8 +22,9 @@ export type StartRun = {
 
 export async function startRun(o: StartRun, requestSignal: AbortSignal): Promise<Response> {
   const l = serverLimits();
+  const model = o.isHouse ? reasoning().houseModel : reasoning().model;
   const live = await readAllowance(o.allowance);
-  const runId = await createRun({ owner: o.owner.toBase58(), delegation: o.allowance.toBase58(), cluster: cluster(), task: o.task, model: reasoning().model, isHouse: o.isHouse });
+  const runId = await createRun({ owner: o.owner.toBase58(), delegation: o.allowance.toBase58(), cluster: cluster(), task: o.task, model, isHouse: o.isHouse });
   const encoder = new TextEncoder();
   const started = Date.now();
   let seq = 0;
@@ -45,7 +46,7 @@ export async function startRun(o: StartRun, requestSignal: AbortSignal): Promise
         // The run is NOT tied to the browser connection: once money may be in flight we finish the purchase and the
         // bookkeeping even if the person closes the tab. Only a new step is skipped after a disconnect.
         const result = await runAgent({
-          runId, owner: o.owner, allowance: o.allowance, task: o.task, canAsk: !o.isHouse,
+          runId, owner: o.owner, allowance: o.allowance, task: o.task, model, canAsk: !o.isHouse,
           limits: { perPurchaseMax: l.perPurchaseMaxBase, approvalThreshold: o.approvalThreshold, runBudget: o.runBudget, approvalWaitMs: l.approvalWaitMs, maxSteps: l.maxSteps },
           emit, signal: requestSignal,
         });

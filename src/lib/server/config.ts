@@ -61,9 +61,13 @@ export const house = (): { owner: PublicKey; delegation: PublicKey } | null => {
   return owner && delegation ? { owner: new PublicKey(owner), delegation: new PublicKey(delegation) } : null;
 };
 
+/** Which model the agent buys its reasoning from. Each step is a paid request, so the choice is also a price choice:
+ *  on 2026-11-20 one step was quoted at about $0.004 to $0.007 for Claude Haiku 4.5 and $0.001 to $0.002 for GPT-5.6 Luna. */
 export const reasoning = () => ({
-  model: env("REASONING_MODEL") ?? "google/gemini-3-flash-preview",
-  maxTokens: Number(env("REASONING_MAX_TOKENS") ?? 700),
+  model: env("REASONING_MODEL") ?? "anthropic/claude-haiku-4.5",
+  /** The public demo petty cash uses the cheapest model that follows the protocol reliably, so the demo budget lasts. */
+  houseModel: env("HOUSE_REASONING_MODEL") ?? env("REASONING_MODEL") ?? "anthropic/claude-haiku-4.5",
+  maxTokens: Number(env("REASONING_MAX_TOKENS") ?? 500),
 });
 
 export const sessionSecret = () => need("SESSION_SECRET");

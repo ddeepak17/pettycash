@@ -79,7 +79,7 @@ export const purchasesForRun = async (runId: string) => (await sql()`select * fr
 export const purchasesForOwner = async (owner: string, limit: number) =>
   (await sql()`select * from pettycash.purchases where owner = ${owner} and cluster = ${cluster()} and status <> 'denied' order by created_at desc limit ${limit}`) as unknown as PurchaseRow[];
 export const housePurchases = async (limit: number) =>
-  (await sql()`select p.* from pettycash.purchases p join pettycash.runs r on r.id = p.run_id where r.is_house and p.cluster = ${cluster()} and p.pay_sig is not null order by p.created_at desc limit ${limit}`) as unknown as PurchaseRow[];
+  (await sql()`select p.* from pettycash.purchases p join pettycash.runs r on r.id = p.run_id where r.is_house and p.cluster = ${cluster()} and p.pull_sig is not null order by p.created_at desc limit ${limit}`) as unknown as PurchaseRow[];
 export const unresolvedPurchases = async (owner?: string) =>
   (await (owner
     ? sql()`select * from pettycash.purchases where status in ('refund_pending', 'pulled') and refund_sig is null and cluster = ${cluster()} and owner = ${owner} order by created_at limit 20`

@@ -24,6 +24,8 @@ export type RunOptions = {
   owner: PublicKey;
   allowance: PublicKey;
   task: string;
+  /** Model id at the reasoning seller. Defaults to the configured one. */
+  model?: string;
   canAsk: boolean;
   limits: { perPurchaseMax: bigint; approvalThreshold: bigint; runBudget: bigint; approvalWaitMs: number; maxSteps: number };
   emit: (e: RunEvent) => Promise<void> | void;
@@ -130,7 +132,7 @@ export async function runAgent(o: RunOptions): Promise<RunResult> {
     const thought = await purchase(ctx(step), {
       kind: "reasoning", toolId: null,
       seller: { name: brain.name, host: brain.host, payTo: brain.payTo, maxPrice: BigInt(brain.maxPriceBase) },
-      request: { method: "POST", url: brain.url, body: JSON.stringify({ model: cfg.model, messages, max_tokens: cfg.maxTokens, temperature: 0.2, stream: false }) },
+      request: { method: "POST", url: brain.url, body: JSON.stringify({ model: o.model ?? cfg.model, messages, max_tokens: cfg.maxTokens, temperature: 0.2, stream: false }) },
       timeoutMs: brain.timeoutMs,
     });
     if (!thought.ok) {
