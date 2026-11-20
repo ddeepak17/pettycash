@@ -50,7 +50,10 @@ def main():
         if seg.get("clip"):
             start = float(seg.get("start", 0)); use = float(seg.get("use", duration(seg["clip"]) - start))
             info.update(start=start, use=use, speed=max(1.0, use / length))
-            if info["speed"] > 1.25:
+            if seg.get("badge_text"):
+                # A clip that was built from parts at different speeds says so in its own words.
+                info["badge"] = f"{tmp}/{i}-badge.png"; renders.append({"file": info["badge"], "kind": "badge", "text": seg["badge_text"]})
+            elif info["speed"] > 1.25:
                 info["badge"] = f"{tmp}/{i}-badge.png"; renders.append({"file": info["badge"], "kind": "badge", "text": f"sped up {info['speed']:.1f}x"})
         else:
             info["card"] = f"{tmp}/{i}-card.png"; renders.append({"file": info["card"], "kind": "card", "text": seg.get("card", ""), "sub": seg.get("sub")})
