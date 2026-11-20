@@ -114,7 +114,9 @@ export async function refund(owner: PublicKey, amount: bigint, onSigned?: OnSign
   const agent = agentKeypair();
   const mint = usdcMint();
   return sendAndConfirm(
-    [...budget(60_000), createTransferCheckedInstruction(ata(agent.publicKey, mint), mint, ata(owner, mint), agent.publicKey, amount, USDC_DECIMALS), note(`pettycash:refund:${reference}`)],
+    // If the owner closed their empty token account in the meantime, it is recreated (the agent pays the rent) so the money can go back.
+    [...budget(100_000), createAssociatedTokenAccountIdempotentInstruction(agent.publicKey, ata(owner, mint), owner, mint),
+      createTransferCheckedInstruction(ata(agent.publicKey, mint), mint, ata(owner, mint), agent.publicKey, amount, USDC_DECIMALS), note(`pettycash:refund:${reference}`)],
     agent.publicKey, [agent], { onSigned },
   );
 }

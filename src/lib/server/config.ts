@@ -47,13 +47,15 @@ export const limits = () => ({
   approvalThresholdBase: big("APPROVAL_THRESHOLD_BASE", 10_000n),
   /** Most a single run may spend unless the person chooses less. Default $0.25. */
   runBudgetBase: big("RUN_BUDGET_BASE", 250_000n),
-  /** Most a single run on the public demo petty cash may spend. Default $0.03. */
-  houseRunBudgetBase: big("HOUSE_RUN_BUDGET_BASE", 30_000n),
+  /** Most a single run on the public demo petty cash may spend. Default $0.02. */
+  houseRunBudgetBase: big("HOUSE_RUN_BUDGET_BASE", 20_000n),
   maxSteps: Number(env("MAX_STEPS") ?? 6),
   approvalWaitMs: Number(env("APPROVAL_WAIT_MS") ?? 60_000),
-  // Generous per address: at a conference many visitors share one network address. The real cap on cost is the onchain allowance.
-  houseRunsPerHourPerIp: Number(env("HOUSE_RUNS_PER_HOUR_PER_IP") ?? 40),
-  houseRunsPerHour: Number(env("HOUSE_RUNS_PER_HOUR") ?? 150),
+  // Per address these are deliberately loose: at a conference many visitors share one network address. They slow a
+  // script down; they do not protect the budget. What caps the cost is the onchain allowance.
+  houseRunsPerHourPerIp: Number(env("HOUSE_RUNS_PER_HOUR_PER_IP") ?? 15),
+  houseRunsPerDayPerIp: Number(env("HOUSE_RUNS_PER_DAY_PER_IP") ?? 40),
+  houseRunsPerHour: Number(env("HOUSE_RUNS_PER_HOUR") ?? 60),
 });
 
 /** The public demo petty cash: an allowance from a wallet we funded, so anyone can try without a wallet. */

@@ -10,13 +10,18 @@ const conn = (url: string) => {
   return c;
 };
 export const primaryRpcUrl = () => rpcUrls()[0];
+export const allRpcUrls = () => rpcUrls();
 export const primary = () => conn(primaryRpcUrl());
 
-/** Runs a read against each endpoint until one answers. */
+let turn = 0;
+/** Runs a read against each endpoint until one answers. Each call starts at the next endpoint in turn, so the load
+ *  is spread and one endpoint's rate limit is not hit by a burst of reads. */
 export async function read<T>(fn: (c: Connection) => Promise<T>): Promise<T> {
+  const urls = rpcUrls();
+  const start = turn++ % urls.length;
   let last: unknown;
-  for (const url of rpcUrls()) {
-    try { return await fn(conn(url)); } catch (e) { last = e; }
+  for (let i = 0; i < urls.length; i++) {
+    try { return await fn(conn(urls[(start + i) % urls.length])); } catch (e) { last = e; }
   }
   throw last instanceof Error ? last : new Error("All RPC endpoints failed");
 }
@@ -52,18 +57,22 @@ export async function sendAndConfirm(
   if (opts.onSigned) await opts.onSigned(signature, lastValidBlockHeight);
   const broadcast = () => Promise.allSettled(rpcUrls().map((u) => conn(u).sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 })));
   await broadcast();
-  let lastBroadcast = Date.now();
+  let lastBroadcast = Date.now(), lastHeightCheck = Date.now();
   for (;;) {
+    await sleep(450);
     const status = await read((c) => c.getSignatureStatuses([signature])).then((r) => r.value[0]).catch(() => null);
     if (status?.err) {
       const logs = await read((c) => c.getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 })).then((t) => t?.meta?.logMessages ?? []).catch(() => []);
       throw new TransactionFailed(signature, status.err, logs);
     }
     if (status && (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized")) return { signature, slot: status.slot, ms: Date.now() - started };
-    const height = await read((c) => c.getBlockHeight("confirmed")).catch(() => 0);
-    if (height > lastValidBlockHeight) throw new TransactionExpired(signature);
+    // Checking the block height on every poll doubles the number of RPC calls for no benefit: expiry takes about a minute.
+    if (Date.now() - lastHeightCheck > 4000) {
+      lastHeightCheck = Date.now();
+      const height = await read((c) => c.getBlockHeight("confirmed")).catch(() => 0);
+      if (height > lastValidBlockHeight) throw new TransactionExpired(signature);
+    }
     if (Date.now() - lastBroadcast > 1500) { void broadcast(); lastBroadcast = Date.now(); }
-    await sleep(350);
   }
 }
 

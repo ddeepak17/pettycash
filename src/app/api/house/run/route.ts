@@ -13,12 +13,15 @@ export const maxDuration = 300;
 
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return fail("Cross-site request refused.", 403);
+  // Browsers always say where a POST comes from. A request that does not is a script, and the public demo budget is for people.
+  if (!req.headers.get("origin") && req.headers.get("sec-fetch-site") !== "same-origin") return fail("Open the site in a browser to use the public demo.", 403);
   const h = house();
   if (!h) return fail("The public demo petty cash is switched off right now. Connect your own wallet to try it.", 503);
   const body = (await req.json().catch(() => ({}))) as { task?: unknown };
   const task = typeof body.task === "string" ? body.task.trim() : "";
   if (task.length < 3 || task.length > 300) return fail("Describe the errand in 3 to 300 characters.");
   const l = limits();
+  if (!(await withinRateLimit(`house:day:${clientIp(req)}`, l.houseRunsPerDayPerIp, 86_400))) return fail("This network has used the public demo a lot today. Connect your own wallet to keep going.", 429);
   if (!(await withinRateLimit(`house:${clientIp(req)}`, l.houseRunsPerHourPerIp, 3600))) return fail("You have used the public demo a few times this hour. Connect your own wallet to keep going, or come back later.", 429);
   if (!(await withinRateLimit("house:all", l.houseRunsPerHour, 3600))) return fail("The public demo is busy. Connect your own wallet, or try again in a little while.", 429);
 

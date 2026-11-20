@@ -52,7 +52,7 @@ export type PurchaseRow = {
   response_sha256: string | null; response_bytes: number | null; response_preview: string | null; error: string | null;
   unresolved_until: Date | null; created_at: Date; updated_at: Date; quote: unknown; policy: unknown;
   pull_last_valid_height: string | number | null; pay_blockhash: string | null; pay_last_valid_height: string | number | null; settled_at: Date | null;
-  refund_try_sig: string | null; refund_try_height: string | number | null; attempts: number;
+  refund_try_sig: string | null; refund_try_height: string | number | null; refund_claim: string | null; attempts: number;
   /** Seconds since the row last changed, by the database's clock. Present on rows from openPurchases. */
   age_s?: number;
 };
@@ -169,6 +169,14 @@ export async function claimRefund(id: string): Promise<string | null> {
 export async function recordRefundAttempt(id: string, claim: string, signature: string, lastValidBlockHeight: number): Promise<boolean> {
   const rows = await sql()`update pettycash.purchases set refund_try_sig = ${signature}, refund_try_height = ${lastValidBlockHeight}, updated_at = now()
     where id = ${id} and status = 'refunding' and refund_claim = ${claim} and refund_try_sig is null and refund_sig is null returning id`;
+  return rows.length === 1;
+}
+/** Gives a refund back to the queue, but only if the row still carries the same claim and the same recorded attempt
+ *  the caller saw. A reconciler working from an old copy of the row can therefore never release someone else's live refund. */
+export async function releaseRefund(id: string, claim: string | null, trySig: string | null): Promise<boolean> {
+  const rows = await sql()`update pettycash.purchases set status = 'refund_pending', refund_try_sig = null, refund_try_height = null, updated_at = now()
+    where id = ${id} and status = 'refunding' and refund_sig is null
+      and refund_claim is not distinct from ${claim} and refund_try_sig is not distinct from ${trySig} returning id`;
   return rows.length === 1;
 }
 /** Housekeeping: old replay-guard entries and old deliveries are not needed any more. */

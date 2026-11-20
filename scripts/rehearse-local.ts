@@ -70,7 +70,7 @@ async function main() {
   record("A. purchase delivers", a.ok && a.amount === 1000n && a.text.includes("Local result"), types(mark));
   record("A. money moved owner -> seller, agent holds nothing", (await bal(owner.publicKey)) === 9_999_000n && (await bal(sellerWallet.publicKey)) === 1000n && (await bal(agent.publicKey)) === 0n);
   const rowA = await row(a);
-  record("A. receipt recorded before the chain is asked: delivered, not yet settled", rowA?.status === "delivered" && !!rowA.pull_sig && !!rowA.pay_sig && !!rowA.pay_memo && !!rowA.pay_blockhash && rowA.settled_at === null);
+  record("A. receipt recorded before the chain is asked: delivered, not yet settled", rowA?.status === "delivered" && !!rowA.pull_sig && rowA.pay_sig === null && !!rowA.pay_memo && !!rowA.pay_blockhash && rowA.settled_at === null);
 
   // B. Seller takes the money, reports it, and fails.
   mark = events.length;
@@ -124,7 +124,7 @@ async function main() {
   const first = await settleUnresolved(me);
   const rowB = await row(b), rowC2 = await row(c2);
   record("R1. payments are confirmed from the chain: A, B, C2 (found by its memo) and E", first.foundPaid === 4 && first.refunded === 0 && first.stillOpen === 3
-    && (await row(a))?.settled_at !== null && rowB?.status === "paid" && rowC2?.status === "paid" && !!rowC2.pay_sig && rowC2.refund_sig === null, JSON.stringify(first));
+    && (await row(a))?.settled_at !== null && !!(await row(a))?.pay_sig && rowB?.status === "paid" && rowC2?.status === "paid" && !!rowC2.pay_sig && rowC2.refund_sig === null, JSON.stringify(first));
   record("R1. nothing is refunded while a signed payment could still land", (await bal(agent.publicKey)) === 3000n && (await row(cOut))?.status === "paying" && (await row(l1))?.status === "delivered");
 
   // G. The chain itself refuses an oversized pull, independent of our rule check.

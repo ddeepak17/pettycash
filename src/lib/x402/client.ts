@@ -177,34 +177,46 @@ export function assertPaymentIsExactlyTheQuote(transactionBase64: string, expect
 /** A payment that has been built, signed and checked, but not sent. */
 export type BuiltPayment = { headers: Record<string, string>; memo: string; blockhash: string };
 
+// One scheme object per RPC endpoint is kept for the life of the process, so the token's details are fetched once
+// instead of on every payment.
+const schemes = new Map<string, ExactSvmScheme>();
+
 /** Step 2: build and sign the quoted transfer, and check it. Nothing is sent and no balance is needed, so this runs
- *  BEFORE any money is pulled: if a payment cannot be built, no money ever moves. */
-export async function buildPayment(quote: Quote, agentSecretKey: Uint8Array, opts: { rpcUrl: string; mint: string }): Promise<{ ok: true; payment: BuiltPayment } | { ok: false; error: string }> {
+ *  BEFORE any money is pulled: if a payment cannot be built, no money ever moves.
+ *  `rpcUrls` are tried in order: a rate-limited or failing endpoint is skipped rather than failing the purchase. */
+export async function buildPayment(quote: Quote, agentSecretKey: Uint8Array, opts: { rpcUrls: string[]; mint: string }): Promise<{ ok: true; payment: BuiltPayment } | { ok: false; error: string }> {
   if (quote.x402Version !== 2) return { ok: false, error: "This seller uses an older version of the payment protocol that Petty Cash does not pay." };
-  try {
-    const signer = await createKeyPairSignerFromBytes(agentSecretKey);
-    const net = quote.offer.network as `${string}:${string}`;
-    // A third, independent ceiling inside the SDK itself: this token on this network, never more than the quoted amount.
-    const client = new x402Client()
-      .register(net, new ExactSvmScheme(signer, { rpcUrl: opts.rpcUrl }))
-      .setSpendControls({ allowedAssets: [{ network: net, asset: opts.mint, maxAmountPerPayment: quote.offer.amount }] });
-    const http = new x402HTTPClient(client);
-    const payload = await http.createPaymentPayload(quote.raw as Parameters<typeof http.createPaymentPayload>[0]);
-    const transaction = (payload as { payload?: { transaction?: string } }).payload?.transaction;
-    if (typeof transaction !== "string") return { ok: false, error: "The payment could not be built in the expected form." };
-    const { memo, blockhash } = assertPaymentIsExactlyTheQuote(transaction, {
-      agent: new PublicKey(signer.address),
-      payTo: new PublicKey(quote.offer.payTo),
-      mint: new PublicKey(opts.mint),
-      amount: BigInt(quote.offer.amount),
-    });
-    if (!memo || memo.length < 16) return { ok: false, error: "The payment has no unique note, so it could not be traced later. It was not sent." };
-    return { ok: true, payment: { headers: http.encodePaymentSignatureHeader(payload), memo, blockhash } };
-  } catch (e) {
-    if (e instanceof PaymentCheckError) return { ok: false, error: `The payment was stopped by our own check: ${e.message}.` };
-    console.error("payment build failed:", e instanceof Error ? e.message : e);
-    return { ok: false, error: "The payment could not be prepared." };
+  const signer = await createKeyPairSignerFromBytes(agentSecretKey);
+  const net = quote.offer.network as `${string}:${string}`;
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < opts.rpcUrls.length * 2; attempt++) {
+    const rpcUrl = opts.rpcUrls[attempt % opts.rpcUrls.length];
+    if (attempt >= opts.rpcUrls.length) await new Promise((r) => setTimeout(r, 400));
+    try {
+      let scheme = schemes.get(`${signer.address}|${rpcUrl}`);
+      if (!scheme) { scheme = new ExactSvmScheme(signer, { rpcUrl }); schemes.set(`${signer.address}|${rpcUrl}`, scheme); }
+      // A third, independent ceiling inside the SDK itself: this token on this network, never more than the quoted amount.
+      const client = new x402Client().register(net, scheme).setSpendControls({ allowedAssets: [{ network: net, asset: opts.mint, maxAmountPerPayment: quote.offer.amount }] });
+      const http = new x402HTTPClient(client);
+      const payload = await http.createPaymentPayload(quote.raw as Parameters<typeof http.createPaymentPayload>[0]);
+      const transaction = (payload as { payload?: { transaction?: string } }).payload?.transaction;
+      if (typeof transaction !== "string") return { ok: false, error: "The payment could not be built in the expected form." };
+      const { memo, blockhash } = assertPaymentIsExactlyTheQuote(transaction, {
+        agent: new PublicKey(signer.address),
+        payTo: new PublicKey(quote.offer.payTo),
+        mint: new PublicKey(opts.mint),
+        amount: BigInt(quote.offer.amount),
+      });
+      if (!memo || memo.length < 16) return { ok: false, error: "The payment has no unique note, so it could not be traced later. It was not sent." };
+      return { ok: true, payment: { headers: http.encodePaymentSignatureHeader(payload), memo, blockhash } };
+    } catch (e) {
+      // Our own check failing is final. Anything else (usually a rate-limited RPC endpoint) is retried on the next endpoint.
+      if (e instanceof PaymentCheckError) return { ok: false, error: `The payment was stopped by our own check: ${e.message}.` };
+      lastError = e;
+    }
   }
+  console.error("payment build failed on every endpoint:", lastError instanceof Error ? lastError.message.slice(0, 200) : lastError);
+  return { ok: false, error: "The payment could not be prepared because Solana could not be reached." };
 }
 
 /** Step 3: send the request again with the signed payment attached, and collect the result. */
