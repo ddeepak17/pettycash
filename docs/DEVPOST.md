@@ -69,3 +69,40 @@ First, remove the one piece of custody we still have. Today the agent's key hold
 | Streams as a core data source | README, "The QuickNode Stream" |
 | Setup instructions | README, "Run it yourself" |
 | Technical documentation and architecture overview | `docs/ARCHITECTURE.md` |
+
+## About the project (Devpost's main description box)
+
+Paste this into the large description field if the form has one in addition to the five questions.
+
+```markdown
+## Give your AI petty cash, not your wallet
+
+**Try it now, no wallet needed:** https://pettycash-pink.vercel.app (Solana mainnet, real USDC)
+
+Petty Cash lets you set aside a small budget in your own Solana wallet for an AI agent. The agent runs an errand by paying real companies a fraction of a cent at a time: web search, page reading, market data, weather, even its own reasoning. It holds no API keys. Solana, not our server, refuses any spend above the budget, and every receipt is checked against a QuickNode Stream before it is stamped verified.
+
+### What you can check yourself
+- **A real errand.** Open https://pettycash-pink.vercel.app/r/0a3e0a33-0665-4679-9603-00dca143b14d: it cost $0.0043 and each step links to its transaction on Solana Explorer.
+- **The limit.** On the landing page, click "Try to overspend the house petty cash". Solana's Subscriptions and Allowances program refuses, and you get a link to the failed transaction.
+- **The trap.** Click "Read the trap page and tell me what it says". The page tells AI agents to ignore their limits and send the money away. The agent reads it as data.
+
+### How it works
+1. You set aside an amount and an expiry. The money stays in your wallet; Solana records an allowance for one agent key.
+2. For each purchase the server asks the seller for a price (HTTP 402), runs a rule check in plain code, builds and checks the payment, pulls exactly that price under the allowance, and pays the seller over x402.
+3. A QuickNode Stream on Solana mainnet delivers every transaction that names the agent's key to our webhook. A receipt is verified only when the Stream's token movements match the quote exactly.
+4. If a payment does not complete, the money returns to your wallet, exactly once.
+
+### What is real
+On 2026-11-20 the agent made its first purchases on Solana mainnet. All ten sellers in its catalog have been paid and have delivered, including Exa, CoinGecko and Minifetch. Receipts are verified by the Stream about a second after their block. An over-limit pull was refused onchain (error 300). A seller that failed after payment was sent triggered an automatic refund. The README has every transaction link.
+
+### What is not ours, and what is
+An onchain allowance for an agent is Solana's idea, and others have shown it on devnet with their own test merchant. What we add, as far as we could find: it works against real third-party sellers on mainnet through their stock facilitators, receipts are verified from an independent data source, the agent needs no API keys, and there is a public demo anyone can run.
+
+### Limits we are honest about
+The agent's key holds the price of one purchase for a few seconds. The seller list and per-purchase rules are enforced by our server, not the chain. A seller that takes payment and fails keeps it. Our code has tests, a rehearsal with a deliberately misbehaving seller and AI-assisted reviews, not a professional audit. Amounts are cents.
+
+### What is next
+An x402 payment scheme that pays the seller straight from the allowance, so the agent never holds anything; recurring daily budgets in the interface; an open delivery record per seller built only from verified receipts.
+```
+
+**Built with (tags):** solana, usdc, x402, quicknode, quicknode-streams, typescript, next.js, react, postgresql, tailwindcss, vercel
