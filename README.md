@@ -17,8 +17,8 @@ Rows 1 to 6 and row 8 are done and reproducible today. The other rows are pendin
 | # | Claim | Result | Where |
 |---|---|---|---|
 | 1 | Our instruction builders work against the mainnet build of the Allowances program | 11 of 11 checks pass in a local validator: capped pull, over-limit pull refused (program error 300), wrong key refused (error 130), revoke, recurring period limit (error 400), expiry (error 128) | `scripts/verify-allowances-local.ts` |
-| 2 | The purchase engine delivers, refunds and stops at every limit | 21 of 21 checks pass in a local rehearsal. The seller and the model in the rehearsal are test doubles. The payments really settle on the local chain | `scripts/rehearse-local.ts` |
-| 3 | Automated tests | 140 pass without a database: 50 unit tests and 90 Stream pipeline tests | `pnpm test` |
+| 2 | The purchase engine delivers, refunds and stops at every limit | 25 of 25 checks pass in a local rehearsal. The seller and the model in the rehearsal are test doubles. The payments really settle on the local chain | `scripts/rehearse-local.ts` |
+| 3 | Automated tests | 148 pass: 51 unit tests and 97 Stream pipeline tests (7 of the Stream tests need the database) | `pnpm test` |
 | 4 | Every catalog seller is live on Solana mainnet | 10 of 10 endpoints answered an unpaid request with a USDC price, each naming its pinned recipient, on 2026-11-20 | `pnpm quotes` |
 | 5 | The Stream filter reports what the chain recorded | Run in QuickNode's own sandbox on real mainnet blocks. Its token movements equal the balances `getTransaction` returns from a different RPC provider | [infra/quicknode/EVIDENCE.md](infra/quicknode/EVIDENCE.md) |
 | 6 | The Allowances program is in real use | 22 fixed and 3,621 recurring allowance accounts on mainnet on 2026-11-20 | `getProgramAccounts` by account size, see [docs/EVIDENCE.md](docs/EVIDENCE.md) |
@@ -279,7 +279,7 @@ Terminal 2:
 
 ```bash
 pnpm tsx scripts/verify-allowances-local.ts   # 11 checks, needs only the validator
-pnpm tsx scripts/rehearse-local.ts            # 21 checks, needs the validator and DATABASE_URL
+pnpm tsx scripts/rehearse-local.ts            # 25 checks, about five minutes, needs the validator and DATABASE_URL
 ```
 
 `pnpm test:local` runs both. No real funds are involved: the token is a disposable local mint, the seller is a local test double that speaks the real x402 protocol, and the model is a scripted stand-in.
