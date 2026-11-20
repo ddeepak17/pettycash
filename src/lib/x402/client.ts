@@ -155,7 +155,7 @@ export function assertPaymentIsExactlyTheQuote(transactionBase64: string, expect
 }
 
 /** Step 2: sign the quoted transfer, send the request again with the payment attached, and collect the result. */
-export async function payQuote(quote: Quote, agentSecretKey: Uint8Array, opts: { rpcUrl: string; mint: string; timeoutMs?: number }): Promise<PayResult> {
+export async function payQuote(quote: Quote, agentSecretKey: Uint8Array, opts: { rpcUrl: string; mint: string; timeoutMs?: number; beforeSend?: (memo: string | null) => Promise<void> }): Promise<PayResult> {
   const started = Date.now();
   const fail = (error: string, sent = false): PayResult => ({ sent, httpStatus: null, settled: false, signature: null, memo: null, bodyText: "", bodyBytes: 0, sha256: null, contentType: null, error, ms: Date.now() - started });
   if (quote.x402Version !== 2) return fail("This seller uses an older version of the payment protocol that Petty Cash does not pay.");
@@ -181,6 +181,8 @@ export async function payQuote(quote: Quote, agentSecretKey: Uint8Array, opts: {
       amount: BigInt(quote.offer.amount),
     }));
     headers = http.encodePaymentSignatureHeader(payload);
+    // Let the caller write down how to find this payment onchain before it can possibly land.
+    if (opts.beforeSend) await opts.beforeSend(memo);
   } catch (e) {
     return fail(`Payment was not sent: ${e instanceof Error ? e.message : "could not build it"}`);
   }

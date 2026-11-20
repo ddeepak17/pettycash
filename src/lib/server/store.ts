@@ -82,8 +82,8 @@ export const housePurchases = async (limit: number) =>
   (await sql()`select p.* from pettycash.purchases p join pettycash.runs r on r.id = p.run_id where r.is_house and p.cluster = ${cluster()} and p.pay_sig is not null order by p.created_at desc limit ${limit}`) as unknown as PurchaseRow[];
 export const unresolvedPurchases = async (owner?: string) =>
   (await (owner
-    ? sql()`select * from pettycash.purchases where status = 'refund_pending' and cluster = ${cluster()} and owner = ${owner} order by created_at limit 20`
-    : sql()`select * from pettycash.purchases where status = 'refund_pending' and cluster = ${cluster()} order by created_at limit 20`)) as unknown as PurchaseRow[];
+    ? sql()`select * from pettycash.purchases where status in ('refund_pending', 'pulled') and refund_sig is null and cluster = ${cluster()} and owner = ${owner} order by created_at limit 20`
+    : sql()`select * from pettycash.purchases where status in ('refund_pending', 'pulled') and refund_sig is null and cluster = ${cluster()} order by created_at limit 20`)) as unknown as PurchaseRow[];
 
 /** Per-seller record built from our own purchases: how many were paid and how many were delivered. */
 export async function sellerRecords(): Promise<Record<string, { purchases: number; delivered: number }>> {

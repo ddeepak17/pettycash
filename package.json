@@ -6,7 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:local": "tsx scripts/verify-allowances-local.ts && tsx scripts/rehearse-local.ts",
+    "quotes": "tsx scripts/quote-sellers.ts",
+    "stream": "tsx scripts/stream.ts"
   },
   "dependencies": {
     "@solana/kit": "^8.6.0",

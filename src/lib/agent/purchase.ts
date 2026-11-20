@@ -43,6 +43,8 @@ export type PurchaseOutcome =
 const preview = (text: string, n = 1200) => (text.length > n ? `${text.slice(0, n)}…` : text);
 /** How long after a payment was signed it can still land: Solana blockhashes live about 60 to 90 seconds; we wait longer. */
 const UNRESOLVED_WINDOW_MS = Number(process.env.UNRESOLVED_WINDOW_MS ?? 150_000);
+/** A purchase stuck at "pulled" for this long was abandoned before a payment existed. */
+const STALE_PULL_MS = Number(process.env.STALE_PULL_MS ?? 6 * 60_000);
 
 export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Promise<PurchaseOutcome> {
   const sellerRef: SellerRef = { id: target.toolId, name: target.seller.name, host: target.seller.host, url: target.request.url };
@@ -121,7 +123,12 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   await ctx.emit({ type: "pulled", purchaseId, signature: pulled.signature, amountBase: amount.toString(), remainingBase: (after?.remaining ?? (live.remaining - amount)).toString(), ms: pulled.ms });
 
   // 4. Pay the seller. The signed transfer is checked against the quote before it leaves this process.
-  const paid = await payQuote(quote, agentKeypair().secretKey, { rpcUrl: primaryRpcUrl(), mint: mint.toBase58(), timeoutMs: target.timeoutMs });
+  //    Before sending, we record the payment's memo and mark the outcome as open, so that if this server stops
+  //    mid-purchase the reconciler can still find the payment onchain or return the money.
+  const paid = await payQuote(quote, agentKeypair().secretKey, {
+    rpcUrl: primaryRpcUrl(), mint: mint.toBase58(), timeoutMs: target.timeoutMs,
+    beforeSend: (memo) => updatePurchase(purchaseId, { status: "refund_pending", pay_memo: memo, unresolved_until: new Date(Date.now() + UNRESOLVED_WINDOW_MS + target.timeoutMs) }),
+  });
 
   if (!paid.sent) {
     // The payment never left, so nobody else holds a signed transfer: giving the money back now is safe.
@@ -137,7 +144,7 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   const delivered = paid.httpStatus !== null && paid.httpStatus >= 200 && paid.httpStatus < 300;
   if (delivered) {
     await updatePurchase(purchaseId, {
-      status: "delivered", pay_sig: paid.signature, pay_memo: paid.memo, http_status: paid.httpStatus, response_sha256: paid.sha256,
+      status: "delivered", pay_sig: paid.signature, pay_memo: paid.memo, unresolved_until: null, http_status: paid.httpStatus, response_sha256: paid.sha256,
       response_bytes: paid.bodyBytes, response_preview: preview(paid.bodyText, 600),
     });
     await ctx.emit({ type: "paid", purchaseId, signature: paid.signature, httpStatus: paid.httpStatus!, ms: paid.ms });
@@ -148,7 +155,7 @@ export async function purchase(ctx: PurchaseContext, target: PurchaseTarget): Pr
   // The payment was sent but the seller did not deliver.
   if (paid.settled && paid.signature) {
     // The seller reported taking the money and still failed. We record that honestly; x402 has no refund from a seller.
-    await updatePurchase(purchaseId, { status: "paid", pay_sig: paid.signature, pay_memo: paid.memo, http_status: paid.httpStatus, error: paid.error });
+    await updatePurchase(purchaseId, { status: "paid", pay_sig: paid.signature, pay_memo: paid.memo, unresolved_until: null, http_status: paid.httpStatus, error: paid.error });
     await ctx.emit({ type: "paid", purchaseId, signature: paid.signature, httpStatus: paid.httpStatus ?? 0, ms: paid.ms });
     return failed("delivery", `${target.seller.name} took the payment of ${formatUsd(amount)} but did not deliver (HTTP ${paid.httpStatus}).`, { paid: amount });
   }
@@ -164,6 +171,8 @@ export async function settleUnresolved(owner?: string): Promise<{ checked: numbe
   const agentAta = ata(agentPublicKey(), usdcMint());
   for (const p of rows) {
     if (p.unresolved_until && new Date(p.unresolved_until).getTime() > Date.now()) continue;
+    // A row still marked "pulled" means the server stopped before any payment was built: nothing could have been paid.
+    if (p.status === "pulled" && Date.now() - new Date(p.created_at).getTime() < STALE_PULL_MS) continue;
     // Look for the payment by its random memo among the agent token account's recent transactions.
     let landed: string | null = null;
     if (p.pay_memo) {
