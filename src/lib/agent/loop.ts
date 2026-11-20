@@ -99,7 +99,14 @@ export function shrinkResult(text: string, limit = 2600): string {
   let out = text;
   try {
     const parsed = JSON.parse(text);
-    out = JSON.stringify(parsed, (_k, v) => (typeof v === "string" && v.length > 420 ? (/^[A-Za-z0-9+/=\s]{420,}$/.test(v) ? "[binary data omitted]" : `${v.slice(0, 420)}…`) : v));
+    const cut = (max: number) => JSON.stringify(parsed, (_k, v) => {
+      if (typeof v !== "string" || v.length <= 420) return v;
+      if (/^[A-Za-z0-9+/=\r\n]+$/.test(v)) return "[binary data omitted]"; // base64: no spaces, so ordinary prose never matches
+      return v.length > max ? `${v.slice(0, max)}…` : v;
+    });
+    // One long text (a page) keeps most of itself. A list of many texts (search results) is cut shorter so all of them fit.
+    out = cut(1800);
+    if (out.length > limit) out = cut(420);
   } catch { /* not JSON: keep text */ }
   return out.length > limit ? `${out.slice(0, limit)}… [trimmed]` : out;
 }
