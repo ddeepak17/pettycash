@@ -7,7 +7,7 @@ Slots in square brackets starting with `PENDING` are not proven. Do not say them
 ## Solana representative
 
 **1. Why this program, and not Squads, Swig or a plain SPL token delegation?**
-We did not build a comparison of those options, so we will not rank them. We chose Solana's Subscriptions and Allowances program because it is Solana's own, it has been audited multiple times by Cantina according to its repository, and it gives exactly what we needed: a capped, expiring allowance for one spender, revocable by the owner at any time, with the money staying in the owner's wallet. A plain token delegation has no expiry and no per-period or per-agent record in the way this program has, but we have not tested other products against our use.
+We did not build a comparison of those options, so we will not rank them. We chose Solana's Subscriptions and Allowances program because it is Solana's own, it has been audited multiple times by Cantina according to its repository, and it gives exactly what we needed: a capped, expiring allowance for one spender, revocable by the owner at any time, with the money staying in the owner's wallet. We have not tested the other options against our use.
 
 **2. What does the program not enforce?**
 It does not restrict where pulled funds go. A fixed allowance has no recipient restriction, so once the agent's key has pulled the money, the program cannot say who receives it. That is why our server keeps a seller list, pinned recipients and a pre-send check on the payment. Those rules are ours, not the chain's, and they are lost if our server is compromised.
@@ -44,7 +44,7 @@ They do not have to trust the agent or the seller, and they trust Solana for the
 The model never holds a key and never builds a transaction. It can only answer or name a tool from a fixed catalog, and tool results go back to it as quoted data. The rule check and the onchain limit are code and chain state that no text can change. A fooled model can still waste the errand's small budget on catalog tools. The app ships a page at `/trap` that tries this, and a local test with a hostile search result passed.
 
 **12. What is the business model?**
-We do not have a proven one, and we will not invent one here. Honest facts: each purchase costs the operator about $0.0004 in network fees, which is large next to a $0.001 purchase, so any model has to cover that. Ideas such as a small fee or an open delivery record per seller are only ideas.
+We do not have a proven one, and we will not invent one here. Honest facts: each purchase costs the operator about $0.0004 in network fees, which is large next to a $0.001 purchase, so any model has to cover that. The open delivery record per seller is a direction we want to explore, not a revenue plan.
 
 **13. How is this different from BudgetRail, and from Coinbase or Circle agent wallets?**
 BudgetRail, from August 2026, built capped agent allowances for x402 on the same program, paying its own test merchant through a facilitator it runs. We pay real third-party sellers on mainnet through their stock facilitators, verify receipts from a Stream, and offer a public demo. We have not studied Coinbase or Circle agent wallets closely enough to compare, so we will not make claims about them.
