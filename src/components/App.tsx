@@ -11,7 +11,7 @@ import { Catalog } from "./Catalog";
 import { CashBox, ProofView } from "./CashBox";
 import { Modal } from "./Modal";
 import type { ProofResult } from "@/lib/types";
-import { Enforcement, Feed, Steps } from "./Landing";
+import { CheckItYourself, Enforcement, Feed, Steps } from "./Landing";
 import { ReceiptList } from "./Receipt";
 import { RunTape } from "./RunTape";
 import { TaskBox } from "./TaskBox";
@@ -67,8 +67,9 @@ export default function App() {
     <>
       <TopBar config={config} />
       <main id="main" className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        {address ? <h1 className="sr-only">Your petty cash</h1> : null}
         {cfgError ? <div className="mt-8"><ErrorNote onRetry={retry}>{cfgError}</ErrorNote></div> : null}
-        {!config && !cfgError ? <div className="mt-12 space-y-4" aria-busy="true"><Spinner label="Loading" /><div className="skeleton h-40 max-w-2xl" /></div> : null}
+        {!config && !cfgError ? <div className="grid gap-10 pt-10 sm:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-14" aria-busy="true"><span className="sr-only" role="status">Loading</span><div className="space-y-4"><div className="skeleton h-4 w-40" /><div className="skeleton h-14 w-full max-w-xl" /><div className="skeleton h-14 w-3/4 max-w-lg" /><div className="skeleton h-24 w-full max-w-xl" /></div><div className="skeleton h-72" /></div> : null}
 
         {config && !address ? (
           <>
@@ -94,7 +95,7 @@ export default function App() {
                     </p>
                   </>
                 ) : (
-                  <div><h2 className="text-xl font-semibold">The house petty cash is switched off</h2><p className="mt-2 text-sm text-muted">Connect your own wallet to try it with a budget of your own.</p></div>
+                  <div><h2 className="text-xl font-semibold">The house petty cash is switched off</h2><p className="mt-2 text-sm text-muted">The public demo budget is being topped up. You can still connect your own wallet.</p></div>
                 )}
                 <div className="perf mt-5 flex flex-wrap items-center gap-3 pt-4">
                   <button className="btn btn-small" onClick={() => document.querySelector<HTMLButtonElement>("header button.btn")?.click()}>Use your own wallet</button>
@@ -112,6 +113,7 @@ export default function App() {
             <Steps />
             <Catalog config={config} />
             <Enforcement config={config} />
+            <CheckItYourself config={config} />
             <Feed config={config} receipts={feed.receipts} error={feed.error} />
           </>
         ) : null}

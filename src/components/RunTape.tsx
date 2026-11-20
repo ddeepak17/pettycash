@@ -71,7 +71,7 @@ function PurchaseBlock({ p, cluster, onApprove, live }: { p: Purchase; cluster: 
           <p className="mt-1 text-sm">{p.approval!.reason}</p>
           <p className="mt-1 text-sm text-muted">Spend {formatUsd(p.amountBase)} at {p.seller.name}? It says no by itself in <Countdown until={p.approval!.expiresAt} />.</p>
           <div className="mt-3 flex flex-wrap gap-3">
-            <button className="btn btn-primary" onClick={() => onApprove?.(p.id, "approved")}>Approve {formatUsd(p.amountBase)}</button>
+            <button autoFocus className="btn btn-primary" onClick={() => onApprove?.(p.id, "approved")}>Approve {formatUsd(p.amountBase)}</button>
             <button className="btn" onClick={() => onApprove?.(p.id, "denied")}>Deny</button>
           </div>
         </div>
@@ -123,7 +123,10 @@ function PurchaseBlock({ p, cluster, onApprove, live }: { p: Purchase; cluster: 
 export function RunTape({ run, cluster, onApprove, onCancel }: { run: RunState; cluster: Cluster; onApprove?: (id: string, d: "approved" | "denied") => void; onCancel?: () => void }) {
   const live = run.phase === "running";
   return (
-    <section aria-label="The errand" aria-live="polite" className="sheet p-4 sm:p-6" data-testid="run-tape">
+    <section aria-label="The errand" className="sheet p-4 sm:p-6" data-testid="run-tape">
+      <p className="sr-only" role="status" aria-live="polite">
+        {Object.values(run.purchases).some((p) => p.approval && !p.approval.result) ? "Your approval is needed to continue." : run.phase === "done" ? "The errand is finished." : run.phase === "failed" ? "The errand stopped with a problem." : ""}
+      </p>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="eyebrow">Errand</div>
