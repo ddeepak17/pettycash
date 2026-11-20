@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local secrets and scratch
+.env*.local
+.env
+*.keypair.json
+test-ledger/
