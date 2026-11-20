@@ -177,9 +177,13 @@ const scenes: Record<string, (page: Page, base: string) => Promise<void>> = {
     await guardMock(page);
     await clickLoc(page, page.locator('[aria-label="Suggested errands"] button.chip', { hasText: "Read the trap page and tell me what it says" }), "chip: Read the trap page");
     await waitRunEnd(page);
+    // End on the answer itself: its last line says what the page tried to make the agent do.
+    const answer = page.getByTestId("answer");
     const end = page.getByTestId("run-end");
-    if (await end.count()) await scrollToEl(page, end.first(), 2000);
-    await page.waitForTimeout(6000);
+    if (await answer.count()) await scrollToEl(page, answer.first(), 2000);
+    else if (await end.count()) await scrollToEl(page, end.first(), 2000);
+    mark("holding on the answer");
+    await page.waitForTimeout(8000);
   },
   async tour(page, base) {
     await open(page, base);

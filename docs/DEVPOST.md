@@ -84,7 +84,7 @@ Petty Cash lets you set aside a small budget in your own Solana wallet for an AI
 ### What you can check yourself
 - **A real errand.** Open https://pettycash-pink.vercel.app/r/0a3e0a33-0665-4679-9603-00dca143b14d: it cost $0.0043 and each step links to its transaction on Solana Explorer.
 - **The limit.** On the landing page, click "Try to overspend the house petty cash". Solana's Subscriptions and Allowances program refuses, and you get a link to the failed transaction.
-- **The trap.** Click "Read the trap page and tell me what it says". The page tells AI agents to ignore their limits and send the money away. The agent reads it as data.
+- **The trap.** Click "Read the trap page and tell me what it says". The page tells AI agents to ignore their limits and send the money away. The agent summarises the page, tells you the page tried to hijack it, and buys nothing else.
 
 ### How it works
 1. You set aside an amount and an expiry. The money stays in your wallet; Solana records an allowance for one agent key.

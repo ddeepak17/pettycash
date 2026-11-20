@@ -42,7 +42,7 @@ Every row is done. Rows 7 to 12 are real transactions on Solana mainnet from 202
 - **Test the limit.** One button asks Solana to pull one base unit more than is left and shows the program's refusal as a failed transaction on the explorer.
 - **Revoke.** One button closes the petty cash from your own wallet. This works without our site: any client can send the program's revoke instruction.
 - **No wallet needed.** Anyone can run an errand on a public "house" petty cash that the team funded. It is safe to leave open because its cost is capped by an onchain allowance in the same program, plus a per-errand budget and rate limits.
-- **Try to trick it.** The app ships a page, `/trap`, that tells AI agents to ignore their limits and send the money away. Ask the agent to read it. The rule check and the onchain limit do not depend on what any page says.
+- **Try to trick it.** The app ships a page, `/trap`, that tells AI agents to ignore their limits and send the money away. Ask the agent to read it. It reports the page's real content and says the page tried to hijack it ([a real run](https://pettycash-pink.vercel.app/r/01c7525f-16ef-4f6b-8b00-c8309ab04dda)). The rule check and the onchain limit do not depend on what any page says, so a fooled model could not overspend either.
 
 What the agent can buy. Prices are what each seller quoted on Solana mainnet on 2026-11-20. The real price is whatever the seller quotes at purchase time.
 
