@@ -100,3 +100,11 @@ create table if not exists pettycash.settings (
   value      jsonb not null,
   updated_at timestamptz not null default now()
 );
+
+-- Added after the first version: what kind of purchase it was, and what we need to settle an unclear outcome.
+alter table pettycash.purchases add column if not exists kind text not null default 'tool';           -- tool | reasoning
+alter table pettycash.purchases add column if not exists tool_id text;
+alter table pettycash.purchases add column if not exists pay_memo text;                                -- random memo in the payment; finds it onchain if the seller never reports it
+alter table pettycash.purchases add column if not exists unresolved_until timestamptz;                 -- when an unconfirmed payment can no longer land
+alter table pettycash.purchases add column if not exists step int not null default 0;
+create index if not exists purchases_status_idx on pettycash.purchases (status) where status = 'refund_pending';

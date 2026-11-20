@@ -80,13 +80,12 @@ export const ixRevokeDelegation = (owner: PublicKey, delegation: PublicKey, rece
   ix([meta(owner, true, true), meta(delegation, true), ...(receiver && !receiver.equals(owner) ? [meta(receiver, true)] : [])], Uint8Array.of(3));
 
 // ── Spender instructions (signed by the delegatee: the agent's key) ──────────
-type TransferParams = { delegator: PublicKey; delegatee: PublicKey; nonce: bigint; mint: PublicKey; amount: bigint; destinationTokenAccount: PublicKey };
+type TransferParams = { delegation: PublicKey; delegator: PublicKey; delegatee: PublicKey; mint: PublicKey; amount: bigint; destinationTokenAccount: PublicKey };
 function transferIx(disc: 4 | 5, p: TransferParams) {
-  const sa = subscriptionAuthorityPda(p.delegator, p.mint);
   return ix(
     [
-      meta(delegationPda(sa, p.delegator, p.delegatee, p.nonce), true),
-      meta(sa),
+      meta(p.delegation, true),
+      meta(subscriptionAuthorityPda(p.delegator, p.mint)),
       meta(ata(p.delegator, p.mint), true),
       meta(p.destinationTokenAccount, true),
       meta(p.mint),

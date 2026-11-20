@@ -55,7 +55,7 @@ async function main() {
   record("create fixed: account decodes", d?.type === "fixed" && d.remaining === 1_000_000n && d.delegatee.equals(agent.publicKey) && d.mint.equals(mint), JSON.stringify(d, (_, v) => (typeof v === "bigint" ? v.toString() : v)));
 
   // 2. Agent pulls 0.25 into its own token account (the just-in-time pull).
-  const base = { delegator: owner.publicKey, delegatee: agent.publicKey, nonce, mint };
+  const base = { delegation: dPda, delegator: owner.publicKey, delegatee: agent.publicKey, mint };
   await send([ixTransferFixed({ ...base, amount: 250_000n, destinationTokenAccount: ata(agent.publicKey, mint) })], [agent]);
   d = readDelegation((await c.getAccountInfo(dPda))!.data);
   record("pull 0.25: balances and remaining", (await bal(owner.publicKey, mint)) === 9_750_000n && (await bal(agent.publicKey, mint)) === 250_000n && d?.type === "fixed" && d.remaining === 750_000n,
@@ -80,7 +80,7 @@ async function main() {
   const rn = 2n;
   await send([ixCreateRecurringDelegation({ owner: owner.publicKey, mint, delegatee: agent.publicKey, nonce: rn, amountPerPeriod: 500_000n, periodSecs: 60n, startTs: now + 2n, expiryTs: now + 3600n, initId })], [owner]);
   await new Promise((r) => setTimeout(r, 4000));
-  const rbase = { delegator: owner.publicKey, delegatee: agent.publicKey, nonce: rn, mint, destinationTokenAccount: ata(agent.publicKey, mint) };
+  const rbase = { delegation: delegationPda(sa, owner.publicKey, agent.publicKey, rn), delegator: owner.publicKey, delegatee: agent.publicKey, mint, destinationTokenAccount: ata(agent.publicKey, mint) };
   await send([ixTransferRecurring({ ...rbase, amount: 300_000n })], [agent]);
   const rd = readDelegation((await c.getAccountInfo(delegationPda(sa, owner.publicKey, agent.publicKey, rn)))!.data);
   record("recurring: pull 0.30 of 0.50", rd?.type === "recurring" && rd.pulledInPeriod === 300_000n && rd.remainingInPeriod === 200_000n, JSON.stringify(rd, (_, v) => (typeof v === "bigint" ? v.toString() : v)));
@@ -91,7 +91,7 @@ async function main() {
   const chainNow = BigInt((await c.getBlockTime(await c.getSlot("confirmed"))) ?? Number(now));
   await send([ixCreateFixedDelegation({ owner: owner.publicKey, mint, delegatee: agent.publicKey, nonce: en, amount: 1_000_000n, expiryTs: chainNow + 3n, initId })], [owner]);
   await new Promise((r) => setTimeout(r, 6000));
-  await expectError("expired allowance is rejected", 128, [ixTransferFixed({ ...base, nonce: en, amount: 10_000n, destinationTokenAccount: ata(agent.publicKey, mint) })], [agent]);
+  await expectError("expired allowance is rejected", 128, [ixTransferFixed({ ...base, delegation: delegationPda(sa, owner.publicKey, agent.publicKey, en), amount: 10_000n, destinationTokenAccount: ata(agent.publicKey, mint) })], [agent]);
 
   const failed = results.filter((r) => !r.pass);
   console.log(JSON.stringify({ rpc: RPC, program: ALLOWANCES_PROGRAM_ID.toBase58(), programDataLength: info.data.length, checks: results.length, failed: failed.length }));
