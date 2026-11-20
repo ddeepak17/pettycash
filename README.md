@@ -4,6 +4,8 @@ Petty Cash lets you set aside a small budget in your own Solana wallet for an AI
 
 University Blockchain Conference 2026 hackathon. Track: Agentic Payments and AI. Chain award: Best use of Solana. Bounty: Best Use of QuickNode Streams.
 
+**Try it:** https://pettycash-pink.vercel.app runs on Solana mainnet with real USDC, and needs no wallet. **See a real errand:** [this one](https://pettycash-pink.vercel.app/r/0a3e0a33-0665-4679-9603-00dca143b14d) cost $0.0043: the agent paid one company for its reasoning and another for the weather, and every receipt was verified by the Stream.
+
 ## Three things you can verify in a minute
 
 1. **Solana enforces the budget.** The budget is an allowance account in Solana's audited Subscriptions and Allowances program, [`De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44`](https://explorer.solana.com/address/De1egAFMkMWZSN5rYXRj9CAdheBamobVNubTsi9avR44). We deploy no program of our own. A pull above what is left fails with that program's error 300 (`amountExceedsLimit`). See rows 1 and 9 below.

@@ -206,7 +206,7 @@ export const mockReceipts = (owner: string, house: boolean): Receipt[] => {
 export const mockRunDetail = (id: string): RunDetail => {
   const known = world.runs.get(id);
   if (known) return { ...known, receipts: world.receipts.filter((r) => r.runId === id).map(stripVerify) };
-  const script = scriptEvents("What is the weather in Austin this weekend, and do I need a jacket?", HOUSE_OWNER, "HouseMock");
+  const script = scriptEvents("What is the weather in Austin today and tomorrow, and do I need a jacket?", HOUSE_OWNER, "HouseMock");
   const events = script.map((x) => x.ev);
   const receipts = [seedFeed()[0], seedFeed()[1]].map((r, i) => ({ ...r, runId: id, id: "r" + i }));
   return { run: { id, owner: HOUSE_OWNER, task: (events[0] as { task: string }).task, status: "done", answer: ANSWER, spentBase: "25000", isHouse: true, createdAt: Date.now() - 600000, finishedAt: Date.now() - 585000 }, events, receipts };

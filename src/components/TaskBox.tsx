@@ -2,7 +2,7 @@
 import { useState } from "react";
 
 export const SUGGESTIONS = [
-  "What is the weather in Austin this weekend, and do I need a jacket?",
+  "What is the weather in Austin today and tomorrow, and do I need a jacket?",
   "What is new with Solana today? Three bullets with sources.",
   "Find a well-reviewed taco place near UT Austin.",
 ];

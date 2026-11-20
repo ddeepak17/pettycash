@@ -12,7 +12,7 @@ import { chromium, type Page } from "playwright-core";
 import { Keypair } from "@solana/web3.js";
 import { installTestWallet } from "./test-wallet";
 
-const [mode = "house", base = "http://127.0.0.1:3000", task = "What is the weather in Austin this weekend, and do I need a jacket?", amount = "0.10"] = process.argv.slice(2);
+const [mode = "house", base = "http://127.0.0.1:3000", task = "What is the weather in Austin today and tomorrow, and do I need a jacket?", amount = "0.10"] = process.argv.slice(2);
 const out = `qa/journey-${mode}-${new Date().toISOString().replace(/[:.]/g, "-")}`;
 mkdirSync(out, { recursive: true });
 const log: string[] = [];

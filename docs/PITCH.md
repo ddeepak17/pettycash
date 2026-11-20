@@ -25,7 +25,7 @@ Say: "Today you have two bad options. Fund a wallet for the agent, and one bug o
 
 Do each action while saying the line beside it. Lines after "Say:" are spoken; everything else is a stage direction.
 
-1. On the landing page, click the suggestion "What is the weather in Austin this weekend, and do I need a jacket?" under "Try it now, on us".
+1. On the landing page, click the suggestion "What is the weather in Austin today and tomorrow, and do I need a jacket?" under "Try it now, on us".
    Say: "This is live on Solana mainnet, with real USDC. No wallet, no sign-up. It runs on a public budget our team funded, and that budget is itself capped on Solana, so it is safe to leave open."
 2. Point at the lines "Thinking, paid to BlockRun", the "Quote" block, "Rule check: allowed", "Pulled", "Paid", "Came back".
    Say: "The agent asked a company for a price. Our code checked the price against a short list of approved sellers. Then it paid. It pays real companies, both for its own thinking and for the data it needs, a fraction of a cent each. It holds no API keys. It pays per request."
